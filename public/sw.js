@@ -1,4 +1,4 @@
-const CACHE = 'kart-racer-v5';
+const CACHE = 'kart-racer-v6';
 const ASSETS = ['/', '/index.html', '/css/style.css', '/js/audio.js', '/js/game.js', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
