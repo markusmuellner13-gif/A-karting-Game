@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Kart Racer</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- ═══ MENU ═══════════════════════════════════════════════ -->
+  <div id="menuScreen" class="screen active">
+    <div class="screen-content">
+      <div class="logo">
+        <div class="logo-title">KART RACER</div>
+        <div class="logo-sub">CHAMPIONSHIP</div>
+      </div>
+      <button id="playBtn" class="btn btn-primary btn-lg">PLAY</button>
+      <div class="controls-hint">
+        <div class="hint-title">CONTROLS</div>
+        <div class="hint-row"><span class="key">W A S D</span> Drive &amp; Steer</div>
+        <div class="hint-row"><span class="key">ARROWS</span> Alternative</div>
+        <div class="hint-row"><span class="key">TOUCH</span> On-screen buttons</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ KART SELECT ══════════════════════════════════════════ -->
+  <div id="kartSelectScreen" class="screen">
+    <div class="screen-content">
+      <h2 class="screen-title">SELECT YOUR KART</h2>
+      <div class="cards-row">
+
+        <div class="card kart-option selected" data-kart="0">
+          <div class="kart-preview" id="kartPreview0"></div>
+          <div class="card-name">Speed Demon</div>
+          <div class="card-desc">Blazing fast, hard to control</div>
+          <div class="stats">
+            <div class="stat-row"><span>Speed</span>   <div class="bar"><div class="fill" style="width:95%"></div></div></div>
+            <div class="stat-row"><span>Handling</span><div class="bar"><div class="fill" style="width:35%"></div></div></div>
+            <div class="stat-row"><span>Grip</span>    <div class="bar"><div class="fill" style="width:40%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="card kart-option" data-kart="1">
+          <div class="kart-preview" id="kartPreview1"></div>
+          <div class="card-name">Road King</div>
+          <div class="card-desc">Balanced speed and control</div>
+          <div class="stats">
+            <div class="stat-row"><span>Speed</span>   <div class="bar"><div class="fill" style="width:65%"></div></div></div>
+            <div class="stat-row"><span>Handling</span><div class="bar"><div class="fill" style="width:65%"></div></div></div>
+            <div class="stat-row"><span>Grip</span>    <div class="bar"><div class="fill" style="width:60%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="card kart-option" data-kart="2">
+          <div class="kart-preview" id="kartPreview2"></div>
+          <div class="card-name">Iron Grip</div>
+          <div class="card-desc">Slow but incredibly precise</div>
+          <div class="stats">
+            <div class="stat-row"><span>Speed</span>   <div class="bar"><div class="fill" style="width:40%"></div></div></div>
+            <div class="stat-row"><span>Handling</span><div class="bar"><div class="fill" style="width:92%"></div></div></div>
+            <div class="stat-row"><span>Grip</span>    <div class="bar"><div class="fill" style="width:95%"></div></div></div>
+          </div>
+        </div>
+
+      </div>
+      <div class="btn-row">
+        <button id="backToMenuBtn"  class="btn btn-secondary">BACK</button>
+        <button id="selectKartBtn"  class="btn btn-primary">NEXT: TRACK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TRACK SELECT ════════════════════════════════════════ -->
+  <div id="trackSelectScreen" class="screen">
+    <div class="screen-content">
+      <h2 class="screen-title">SELECT TRACK</h2>
+      <div class="cards-row">
+
+        <div class="card track-option selected" data-track="0">
+          <canvas class="track-preview-canvas" id="trackCanvas0" width="240" height="150"></canvas>
+          <div class="card-name">Sahara Circuit</div>
+          <div class="card-desc">Fast &amp; flowing desert track</div>
+          <div class="track-tags">
+            <span class="tag">3 Laps</span><span class="tag">Easy</span><span class="tag">Desert</span>
+          </div>
+        </div>
+
+        <div class="card track-option" data-track="1">
+          <canvas class="track-preview-canvas" id="trackCanvas1" width="240" height="150"></canvas>
+          <div class="card-name">Forest Rally</div>
+          <div class="card-desc">Technical forest circuit</div>
+          <div class="track-tags">
+            <span class="tag">3 Laps</span><span class="tag">Hard</span><span class="tag">Forest</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="btn-row">
+        <button id="backToKartBtn" class="btn btn-secondary">BACK</button>
+        <button id="toModeBtn"     class="btn btn-primary">NEXT: MODE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODE SELECT ══════════════════════════════════════════ -->
+  <div id="modeSelectScreen" class="screen">
+    <div class="screen-content">
+      <h2 class="screen-title">GAME MODE</h2>
+      <div class="mode-grid">
+
+        <div class="mode-card" id="soloModeCard">
+          <div class="mode-icon">🏎️</div>
+          <div class="mode-name">SOLO RACE</div>
+          <div class="mode-desc">Race two AI opponents</div>
+        </div>
+
+        <div class="mode-card" id="multiModeCard">
+          <div class="mode-icon">🌐</div>
+          <div class="mode-name">CO-OP / VERSUS</div>
+          <div class="mode-desc">Race a friend online in real-time</div>
+        </div>
+
+      </div>
+      <button id="backToTrackBtn" class="btn btn-secondary">BACK</button>
+    </div>
+  </div>
+
+  <!-- ═══ MULTIPLAYER LOBBY ════════════════════════════════════ -->
+  <div id="multiLobbyScreen" class="screen">
+    <div class="screen-content">
+      <h2 class="screen-title">MULTIPLAYER</h2>
+
+      <div class="lobby-tabs">
+        <button id="tabHost" class="tab-btn active">HOST</button>
+        <button id="tabJoin" class="tab-btn">JOIN</button>
+      </div>
+
+      <!-- HOST panel -->
+      <div id="hostPanel" class="lobby-panel">
+        <p class="lobby-label">SHARE THIS CODE WITH YOUR FRIEND</p>
+        <div class="room-code-box" id="roomCodeDisplay">----</div>
+        <p class="lobby-label" style="margin-top:8px">They open the same URL and enter this code</p>
+        <div class="waiting-row">
+          <div class="spinner"></div>
+          <span id="hostStatus">Waiting for opponent…</span>
+        </div>
+        <button id="hostCancelBtn" class="btn btn-secondary">CANCEL</button>
+      </div>
+
+      <!-- JOIN panel -->
+      <div id="joinPanel" class="lobby-panel hidden">
+        <p class="lobby-label">ENTER ROOM CODE</p>
+        <input id="codeInput" class="code-input" type="text" maxlength="4"
+               placeholder="XXXX" autocomplete="off" spellcheck="false">
+        <p id="joinError" class="error-msg"></p>
+        <div class="btn-row">
+          <button id="joinCancelBtn" class="btn btn-secondary">CANCEL</button>
+          <button id="joinRoomBtn"   class="btn btn-primary">JOIN RACE</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ RESULTS ══════════════════════════════════════════════ -->
+  <div id="resultsScreen" class="screen">
+    <div class="screen-content">
+      <h2 class="screen-title" id="resultsTitle">RACE COMPLETE!</h2>
+      <div class="results-panels" id="resultsPanels">
+        <!-- filled by JS -->
+      </div>
+      <div class="btn-row">
+        <button id="mainMenuBtn"  class="btn btn-secondary">MENU</button>
+        <button id="playAgainBtn" class="btn btn-primary">PLAY AGAIN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MOBILE CONTROLS ══════════════════════════════════════ -->
+  <div id="mobileControls">
+    <div class="ctrl-group left-ctrl">
+      <button id="btnLeft"  class="ctrl-btn"       aria-label="Left">&#9664;</button>
+      <button id="btnRight" class="ctrl-btn"       aria-label="Right">&#9654;</button>
+    </div>
+    <div class="ctrl-group right-ctrl">
+      <button id="btnUp"   class="ctrl-btn gas-btn"   aria-label="Gas">GAS</button>
+      <button id="btnDown" class="ctrl-btn brake-btn" aria-label="Brake">BRAKE</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
