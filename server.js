@@ -8,7 +8,7 @@ const httpServer = http.createServer(app);
 const io         = new Server(httpServer, { cors: { origin: '*' } });
 const PORT       = process.env.PORT || 3000;
 
-// rooms: code -> { code, trackId, players: [{socketId, kartId, isHost}], state }
+// rooms: code -> { code, trackId, players: [{socketId, kartId, isHost, ready}], state }
 const rooms = new Map();
 
 function genCode() {
@@ -19,6 +19,10 @@ function genCode() {
   return code;
 }
 
+function lobbyPayload(room) {
+  return room.players.map((p, i) => ({ index: i, kartId: p.kartId, isHost: p.isHost, ready: p.ready }));
+}
+
 io.on('connection', socket => {
   let myRoom = null;
 
@@ -27,60 +31,80 @@ io.on('connection', socket => {
     myRoom = code;
     rooms.set(code, {
       code, trackId,
-      players: [{ socketId: socket.id, kartId, isHost: true }],
+      players: [{ socketId: socket.id, kartId, isHost: true, ready: false }],
       state: 'waiting'
     });
     socket.join(code);
-    socket.emit('room-created', { code, trackId });
+    socket.emit('room-created', { code, playerIndex: 0 });
+    socket.emit('lobby-update', { players: lobbyPayload(rooms.get(code)) });
   });
 
   socket.on('join-room', ({ code, kartId }) => {
     const key = (code || '').toString().toUpperCase().trim();
     const room = rooms.get(key);
-    if (!room)                    return socket.emit('join-error', 'Room not found. Check the code.');
-    if (room.players.length >= 2) return socket.emit('join-error', 'Room is already full.');
-    if (room.state !== 'waiting') return socket.emit('join-error', 'Race already started.');
+    if (!room)                       return socket.emit('join-error', 'Room not found.');
+    if (room.players.length >= 4)    return socket.emit('join-error', 'Room is full (max 4).');
+    if (room.state !== 'waiting')    return socket.emit('join-error', 'Race already started.');
 
     myRoom = key;
-    room.players.push({ socketId: socket.id, kartId, isHost: false });
+    const playerIndex = room.players.length;
+    room.players.push({ socketId: socket.id, kartId, isHost: false, ready: false });
     socket.join(key);
-
-    const hostKartId = room.players[0].kartId;
-    socket.emit('room-joined', { code: key, trackId: room.trackId, hostKartId });
-    socket.to(key).emit('opponent-joined', { kartId });
-
-    room.state = 'countdown';
-    // Give both clients 300ms to render before the race-start fires
-    setTimeout(() => io.to(key).emit('race-start'), 300);
+    socket.emit('room-joined', { code: key, trackId: room.trackId, playerIndex });
+    io.to(key).emit('lobby-update', { players: lobbyPayload(room) });
   });
 
-  // Live kart position broadcast (~20 fps from client)
+  socket.on('player-ready', () => {
+    if (!myRoom || !rooms.has(myRoom)) return;
+    const room = rooms.get(myRoom);
+    const p = room.players.find(p => p.socketId === socket.id);
+    if (p) { p.ready = true; io.to(myRoom).emit('lobby-update', { players: lobbyPayload(room) }); }
+  });
+
+  socket.on('start-race', () => {
+    if (!myRoom || !rooms.has(myRoom)) return;
+    const room = rooms.get(myRoom);
+    const host = room.players.find(p => p.socketId === socket.id);
+    if (!host || !host.isHost) return;
+    if (room.players.length < 2) return;
+    room.state = 'racing';
+    setTimeout(() => io.to(myRoom).emit('race-start', { players: lobbyPayload(room) }), 300);
+  });
+
   socket.on('kart-update', data => {
-    if (myRoom) socket.to(myRoom).emit('opponent-update', data);
+    if (!myRoom || !rooms.has(myRoom)) return;
+    const room = rooms.get(myRoom);
+    const idx = room.players.findIndex(p => p.socketId === socket.id);
+    socket.to(myRoom).emit('opponent-update', { ...data, playerIndex: idx });
   });
 
-  // Opponent completed a lap
   socket.on('lap-complete', data => {
-    if (myRoom) socket.to(myRoom).emit('opponent-lap', data);
+    if (!myRoom || !rooms.has(myRoom)) return;
+    const room = rooms.get(myRoom);
+    const idx = room.players.findIndex(p => p.socketId === socket.id);
+    socket.to(myRoom).emit('opponent-lap', { ...data, playerIndex: idx });
   });
 
-  // Opponent finished all laps
   socket.on('race-finish', () => {
-    if (myRoom) socket.to(myRoom).emit('opponent-finished');
+    if (!myRoom || !rooms.has(myRoom)) return;
+    const room = rooms.get(myRoom);
+    const idx = room.players.findIndex(p => p.socketId === socket.id);
+    socket.to(myRoom).emit('opponent-finished', { playerIndex: idx });
   });
 
   socket.on('disconnect', () => {
     if (!myRoom || !rooms.has(myRoom)) return;
-    socket.to(myRoom).emit('opponent-disconnected');
     const room = rooms.get(myRoom);
+    const idx = room.players.findIndex(p => p.socketId === socket.id);
+    socket.to(myRoom).emit('opponent-disconnected', { playerIndex: idx });
     room.players = room.players.filter(p => p.socketId !== socket.id);
     if (room.players.length === 0) rooms.delete(myRoom);
+    else io.to(myRoom).emit('lobby-update', { players: lobbyPayload(room) });
   });
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
 httpServer.listen(PORT, () => {
-  console.log(`\n  Karting Game  →  http://localhost:${PORT}`);
-  console.log('  Share that URL with a friend on the same network to race online!\n');
+  console.log(`\n  Kart Racer  →  http://localhost:${PORT}\n`);
 });

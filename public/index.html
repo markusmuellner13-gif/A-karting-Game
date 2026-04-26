@@ -22,12 +22,48 @@
         <div class="logo-sub">CHAMPIONSHIP</div>
       </div>
       <button id="playBtn" class="btn btn-primary btn-lg">PLAY</button>
+      <button id="settingsBtn" class="btn btn-secondary">⚙ SETTINGS</button>
       <div class="controls-hint">
         <div class="hint-title">CONTROLS</div>
         <div class="hint-row"><span class="key">W A S D</span> Drive &amp; Steer</div>
-        <div class="hint-row"><span class="key">ARROWS</span> Alternative</div>
-        <div class="hint-row"><span class="key">TOUCH</span> On-screen buttons</div>
+        <div class="hint-row"><span class="key">SPACE</span> Drift</div>
+        <div class="hint-row"><span class="key">E</span> Use Item</div>
+        <div class="hint-row"><span class="key">TOUCH</span> On-screen / Joystick</div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═══ SETTINGS ════════════════════════════════════════════ -->
+  <div id="settingsScreen" class="screen">
+    <div class="screen-content">
+      <h2 class="screen-title">SETTINGS</h2>
+      <div class="settings-panel">
+        <div class="setting-row">
+          <label class="setting-label">Master Volume</label>
+          <input type="range" id="masterVol" class="setting-slider" min="0" max="100" value="70">
+        </div>
+        <div class="setting-row">
+          <label class="setting-label">Music Volume</label>
+          <input type="range" id="musicVol" class="setting-slider" min="0" max="100" value="40">
+        </div>
+        <div class="setting-row">
+          <label class="setting-label">SFX Volume</label>
+          <input type="range" id="sfxVol" class="setting-slider" min="0" max="100" value="80">
+        </div>
+        <div class="setting-row">
+          <label class="setting-label">Ghost Mode</label>
+          <label class="toggle"><input type="checkbox" id="ghostToggle" checked><span class="toggle-track"></span></label>
+        </div>
+        <div class="setting-row">
+          <label class="setting-label">Virtual Joystick</label>
+          <label class="toggle"><input type="checkbox" id="joystickToggle"><span class="toggle-track"></span></label>
+        </div>
+        <div class="setting-row">
+          <label class="setting-label">Drift Assist</label>
+          <label class="toggle"><input type="checkbox" id="driftAssistToggle"><span class="toggle-track"></span></label>
+        </div>
+      </div>
+      <button id="settingsBackBtn" class="btn btn-primary">BACK</button>
     </div>
   </div>
 
@@ -36,7 +72,6 @@
     <div class="screen-content">
       <h2 class="screen-title">SELECT YOUR KART</h2>
       <div class="cards-row">
-
         <div class="card kart-option selected" data-kart="0">
           <div class="kart-preview" id="kartPreview0"></div>
           <div class="card-name">Speed Demon</div>
@@ -47,7 +82,6 @@
             <div class="stat-row"><span>Grip</span>    <div class="bar"><div class="fill" style="width:40%"></div></div></div>
           </div>
         </div>
-
         <div class="card kart-option" data-kart="1">
           <div class="kart-preview" id="kartPreview1"></div>
           <div class="card-name">Road King</div>
@@ -58,7 +92,6 @@
             <div class="stat-row"><span>Grip</span>    <div class="bar"><div class="fill" style="width:60%"></div></div></div>
           </div>
         </div>
-
         <div class="card kart-option" data-kart="2">
           <div class="kart-preview" id="kartPreview2"></div>
           <div class="card-name">Iron Grip</div>
@@ -69,7 +102,6 @@
             <div class="stat-row"><span>Grip</span>    <div class="bar"><div class="fill" style="width:95%"></div></div></div>
           </div>
         </div>
-
       </div>
       <div class="btn-row">
         <button id="backToMenuBtn"  class="btn btn-secondary">BACK</button>
@@ -83,25 +115,30 @@
     <div class="screen-content">
       <h2 class="screen-title">SELECT TRACK</h2>
       <div class="cards-row">
-
         <div class="card track-option selected" data-track="0">
           <canvas class="track-preview-canvas" id="trackCanvas0" width="240" height="150"></canvas>
           <div class="card-name">Sahara Circuit</div>
           <div class="card-desc">Fast &amp; flowing desert track</div>
-          <div class="track-tags">
-            <span class="tag">3 Laps</span><span class="tag">Easy</span><span class="tag">Desert</span>
-          </div>
+          <div class="track-tags"><span class="tag">3 Laps</span><span class="tag">Easy</span><span class="tag">Desert</span></div>
         </div>
-
         <div class="card track-option" data-track="1">
           <canvas class="track-preview-canvas" id="trackCanvas1" width="240" height="150"></canvas>
           <div class="card-name">Forest Rally</div>
           <div class="card-desc">Technical forest circuit</div>
-          <div class="track-tags">
-            <span class="tag">3 Laps</span><span class="tag">Hard</span><span class="tag">Forest</span>
-          </div>
+          <div class="track-tags"><span class="tag">3 Laps</span><span class="tag">Hard</span><span class="tag">Forest</span></div>
         </div>
-
+        <div class="card track-option" data-track="2">
+          <canvas class="track-preview-canvas" id="trackCanvas2" width="240" height="150"></canvas>
+          <div class="card-name">Night City</div>
+          <div class="card-desc">Urban night circuit with neon lights</div>
+          <div class="track-tags"><span class="tag">3 Laps</span><span class="tag">Medium</span><span class="tag">Night</span></div>
+        </div>
+        <div class="card track-option" data-track="3">
+          <canvas class="track-preview-canvas" id="trackCanvas3" width="240" height="150"></canvas>
+          <div class="card-name">Ice Valley</div>
+          <div class="card-desc">Slippery mountain circuit</div>
+          <div class="track-tags"><span class="tag">3 Laps</span><span class="tag">Expert</span><span class="tag">Ice</span></div>
+        </div>
       </div>
       <div class="btn-row">
         <button id="backToKartBtn" class="btn btn-secondary">BACK</button>
@@ -115,19 +152,16 @@
     <div class="screen-content">
       <h2 class="screen-title">GAME MODE</h2>
       <div class="mode-grid">
-
         <div class="mode-card" id="soloModeCard">
           <div class="mode-icon">🏎️</div>
           <div class="mode-name">SOLO RACE</div>
-          <div class="mode-desc">Race two AI opponents</div>
+          <div class="mode-desc">Race three AI opponents</div>
         </div>
-
         <div class="mode-card" id="multiModeCard">
           <div class="mode-icon">🌐</div>
-          <div class="mode-name">CO-OP / VERSUS</div>
-          <div class="mode-desc">Race a friend online in real-time</div>
+          <div class="mode-name">MULTIPLAYER</div>
+          <div class="mode-desc">Up to 4 players online</div>
         </div>
-
       </div>
       <button id="backToTrackBtn" class="btn btn-secondary">BACK</button>
     </div>
@@ -137,7 +171,6 @@
   <div id="multiLobbyScreen" class="screen">
     <div class="screen-content">
       <h2 class="screen-title">MULTIPLAYER</h2>
-
       <div class="lobby-tabs">
         <button id="tabHost" class="tab-btn active">HOST</button>
         <button id="tabJoin" class="tab-btn">JOIN</button>
@@ -145,28 +178,30 @@
 
       <!-- HOST panel -->
       <div id="hostPanel" class="lobby-panel">
-        <p class="lobby-label">SHARE THIS CODE WITH YOUR FRIEND</p>
+        <p class="lobby-label">SHARE THIS CODE WITH FRIENDS</p>
         <div class="room-code-box" id="roomCodeDisplay">----</div>
-        <p class="lobby-label" style="margin-top:8px">They open the same URL and enter this code</p>
+        <div id="playerSlots" class="player-slots"></div>
         <div class="waiting-row">
           <div class="spinner"></div>
-          <span id="hostStatus">Waiting for opponent…</span>
+          <span id="hostStatus">Waiting for players…</span>
         </div>
-        <button id="hostCancelBtn" class="btn btn-secondary">CANCEL</button>
+        <div class="btn-row">
+          <button id="readyBtn"     class="btn btn-secondary">READY</button>
+          <button id="startRaceBtn" class="btn btn-primary" style="display:none">START RACE</button>
+          <button id="hostCancelBtn" class="btn btn-secondary">CANCEL</button>
+        </div>
       </div>
 
       <!-- JOIN panel -->
       <div id="joinPanel" class="lobby-panel hidden">
         <p class="lobby-label">ENTER ROOM CODE</p>
-        <input id="codeInput" class="code-input" type="text" maxlength="4"
-               placeholder="XXXX" autocomplete="off" spellcheck="false">
+        <input id="codeInput" class="code-input" type="text" maxlength="4" placeholder="XXXX" autocomplete="off" spellcheck="false">
         <p id="joinError" class="error-msg"></p>
         <div class="btn-row">
           <button id="joinCancelBtn" class="btn btn-secondary">CANCEL</button>
           <button id="joinRoomBtn"   class="btn btn-primary">JOIN RACE</button>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -174,9 +209,7 @@
   <div id="resultsScreen" class="screen">
     <div class="screen-content">
       <h2 class="screen-title" id="resultsTitle">RACE COMPLETE!</h2>
-      <div class="results-panels" id="resultsPanels">
-        <!-- filled by JS -->
-      </div>
+      <div class="results-panels" id="resultsPanels"></div>
       <div class="btn-row">
         <button id="mainMenuBtn"  class="btn btn-secondary">MENU</button>
         <button id="playAgainBtn" class="btn btn-primary">PLAY AGAIN</button>
@@ -186,9 +219,14 @@
 
   <!-- ═══ MOBILE CONTROLS ══════════════════════════════════════ -->
   <div id="mobileControls">
-    <div class="ctrl-group left-ctrl">
+    <!-- Standard D-pad (hidden in joystick mode) -->
+    <div class="ctrl-group left-ctrl no-joystick">
       <button id="btnLeft"  class="ctrl-btn"       aria-label="Left">&#9664;</button>
       <button id="btnRight" class="ctrl-btn"       aria-label="Right">&#9654;</button>
+    </div>
+    <div class="ctrl-group center-ctrl no-joystick">
+      <button id="btnDrift" class="ctrl-btn drift-btn" aria-label="Drift">DRIFT</button>
+      <button id="btnItem"  class="ctrl-btn item-btn"  aria-label="Item">ITEM</button>
     </div>
     <div class="ctrl-group right-ctrl">
       <button id="btnUp"   class="ctrl-btn gas-btn"   aria-label="Gas">GAS</button>
@@ -197,6 +235,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="js/audio.js"></script>
   <script src="js/game.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
