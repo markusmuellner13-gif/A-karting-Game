@@ -245,9 +245,13 @@
   <script src="js/game.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js');
-      navigator.serviceWorker.addEventListener('message', e => {
-        if (e.data && e.data.type === 'sw-updated') location.reload();
+      navigator.serviceWorker.register('/sw.js').then(reg => {
+        // Force iOS to check for a new SW on every open instead of waiting 24h
+        reg.update();
+      });
+      // Fires when a new SW takes control — reload to get fresh cached files
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        location.reload();
       });
     }
   </script>
