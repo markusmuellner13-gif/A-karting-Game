@@ -272,6 +272,36 @@ html, body {
 /* joystick mode: hide d-pad, keep gas/brake */
 #mobileControls.joystick-mode .no-joystick { visibility:hidden; pointer-events:none; }
 
+/* ── RACE HUD BUTTONS ─────────────────────────────────────── */
+#raceHUDButtons {
+  position: fixed;
+  top: 80px;
+  right: 14px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 150;
+}
+#raceHUDButtons.racing { display: flex; }
+.hud-btn {
+  width: 48px;
+  height: 48px;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-radius: 12px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 1.3rem;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  touch-action: manipulation;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.hud-btn:active { background: rgba(255,255,255,0.2); }
+
 /* ── ANIMATIONS ───────────────────────────────────────────── */
 @keyframes fadeDown { from{opacity:0;transform:translateY(-18px)} to{opacity:1;transform:none} }
 @keyframes spin     { to{ transform:rotate(360deg) } }

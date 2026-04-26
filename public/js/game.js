@@ -338,6 +338,10 @@ class Game {
     // Overlay
     this._overlayMsg='';this._overlayColor='#fff';this._overlayTimer=0;
 
+    // View & pause
+    this.viewMode='top-down'; // 'top-down' | 'third-person' | 'first-person'
+    this.paused=false;
+
     this._setupCanvas();
     this._bindUI();
     this._applySettings();
@@ -447,6 +451,16 @@ class Game {
     $('playBtn').onclick=()=>{this.audio.start();this._setState('selecting-kart');};
     $('settingsBtn').onclick=()=>this._setState('settings');
 
+    // View cycle & pause buttons
+    const viewBtn=$('viewBtn'),pauseBtn=$('pauseBtn');
+    if(viewBtn) viewBtn.onclick=()=>this._cycleView();
+    if(pauseBtn) pauseBtn.onclick=()=>this._togglePause();
+    window.addEventListener('keydown',e=>{
+      if(!['racing','countdown'].includes(this.state))return;
+      if(e.key==='v'||e.key==='V'){this._cycleView();e.preventDefault();}
+      if(e.key==='Escape'||e.key==='p'||e.key==='P'){this._togglePause();e.preventDefault();}
+    });
+
     // Kart select
     document.querySelectorAll('.kart-option').forEach(el=>el.addEventListener('click',()=>{
       document.querySelectorAll('.kart-option').forEach(e=>e.classList.remove('selected'));
@@ -528,6 +542,8 @@ class Game {
     if(map[state])document.getElementById(map[state]).classList.add('active');
     const racing=['racing','countdown','finished'].includes(state);
     document.getElementById('mobileControls').classList.toggle('racing',racing);
+    const hb=document.getElementById('raceHUDButtons');
+    if(hb)hb.classList.toggle('racing',['racing','countdown'].includes(state));
     if(state==='multi-lobby'){
       document.getElementById('roomCodeDisplay').textContent='----';
       document.getElementById('hostStatus').textContent='Waiting…';
@@ -631,6 +647,7 @@ class Game {
       return;
     }
     if(this.state!=='racing')return;
+    if(this.paused)return;
 
     this.raceTime+=dt;
     if(this._lapFlash>0)this._lapFlash-=dt;
@@ -878,20 +895,24 @@ class Game {
     const isMenu=['menu','selecting-kart','selecting-track','mode-select','multi-lobby','results','settings'].includes(this.state);
     if(isMenu){ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);this._drawStars(ctx,W,H);return;}
 
-    ctx.save();
-    ctx.translate(Math.round(W/2-this.camera.x),Math.round(H/2-this.camera.y));
-    this._drawWorld(ctx);
-    this._drawTrack(ctx);
-    this.particles.renderSkids(ctx);
-    this._drawBoostPadSprites(ctx);
-    this._drawPowerUpItems(ctx);
-    this._drawOilSlickSprites(ctx);
-    this.aiKarts.forEach(ai=>this._drawKartEntity(ctx,ai,false));
-    this.opponents.forEach((o,i)=>{if(o&&i!==this.mySlot)this._drawKartEntity(ctx,o,true);});
-    if(this.settings.ghost&&this.ghost.ghost)this._drawGhost(ctx);
-    if(this.player)this._drawKartEntity(ctx,this.player,false);
-    this.particles.renderParticles(ctx);
-    ctx.restore();
+    if(this.viewMode!=='top-down'&&this.player){
+      this._renderPerspective(ctx,W,H);
+    } else {
+      ctx.save();
+      ctx.translate(Math.round(W/2-this.camera.x),Math.round(H/2-this.camera.y));
+      this._drawWorld(ctx);
+      this._drawTrack(ctx);
+      this.particles.renderSkids(ctx);
+      this._drawBoostPadSprites(ctx);
+      this._drawPowerUpItems(ctx);
+      this._drawOilSlickSprites(ctx);
+      this.aiKarts.forEach(ai=>this._drawKartEntity(ctx,ai,false));
+      this.opponents.forEach((o,i)=>{if(o&&i!==this.mySlot)this._drawKartEntity(ctx,o,true);});
+      if(this.settings.ghost&&this.ghost.ghost)this._drawGhost(ctx);
+      if(this.player)this._drawKartEntity(ctx,this.player,false);
+      this.particles.renderParticles(ctx);
+      ctx.restore();
+    }
 
     if(['racing','finished'].includes(this.state))this._drawHUD(ctx,W,H);
     this._drawMinimap(ctx,W,H);
@@ -900,6 +921,7 @@ class Game {
     if(this._lapFlash>0)        this._drawLapFlash(ctx,W,H);
     if(this._overlayTimer>0)    this._drawOverlay(ctx,W,H);
     if(this.settings.joystick)  this.joystick.render(ctx);
+    if(this.paused)             this._drawPauseOverlay(ctx,W,H);
   }
 
   // ─── BACKGROUND / WORLD ──────────────────────────────────
@@ -1006,6 +1028,7 @@ class Game {
     ctx.strokeStyle=track.theme==='night'?'#00aaff':track.theme==='ice'?'rgba(200,230,255,0.5)':'#eecc00';
     ctx.lineWidth=3.5;ctx.stroke();ctx.restore();
     this._drawStartLine(ctx);
+    this._drawStartGrid(ctx);
   }
 
   _drawStartLine(ctx){
@@ -1234,11 +1257,341 @@ class Game {
     ctx.fillRect(W/2-tw/2,H*.1-18,tw,36);ctx.fillStyle=this._overlayColor;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(this._overlayMsg,W/2,H*.1);ctx.restore();
   }
 
+  // ─── VIEW & PAUSE ────────────────────────────────────────
+  _cycleView(){
+    const modes=['top-down','third-person','first-person'];
+    this.viewMode=modes[(modes.indexOf(this.viewMode)+1)%modes.length];
+    const labels={'top-down':'TOP VIEW','third-person':'3RD PERSON','first-person':'1ST PERSON'};
+    this._showOverlay(labels[this.viewMode],'#ffcc00');
+    const btn=document.getElementById('viewBtn');
+    if(btn)btn.textContent={'top-down':'🗺','third-person':'📷','first-person':'🎯'}[this.viewMode];
+  }
+
+  _togglePause(){
+    if(!['racing'].includes(this.state))return;
+    this.paused=!this.paused;
+    if(this.paused){this.audio.stopEngine();this.audio.setDriftScreech(false);}
+    const btn=document.getElementById('pauseBtn');
+    if(btn)btn.textContent=this.paused?'▶':'⏸';
+  }
+
+  // ─── 3D PROJECTION HELPER ────────────────────────────────
+  _mkProj(camX,camY,angle,camH,focalLen,W,H,horizonY){
+    const cosA=Math.cos(angle),sinA=Math.sin(angle);
+    return(wx,wy)=>{
+      const dx=wx-camX,dy=wy-camY;
+      const fwd=dx*cosA+dy*sinA;
+      const lat=-dx*sinA+dy*cosA;
+      if(fwd<0.5)return null;
+      const s=focalLen/fwd;
+      return{sx:W/2+lat*s,sy:horizonY+camH*s,scale:s,fwd};
+    };
+  }
+
+  // ─── PERSPECTIVE RENDERER ────────────────────────────────
+  _renderPerspective(ctx,W,H){
+    const player=this.player;
+    const fp=this.viewMode==='first-person';
+    const angle=player.angle;
+    const camBack=fp?0:115, camH=fp?9:52, focalLen=H*0.72;
+    const horizonY=Math.round(H*0.42);
+    const camX=player.x-Math.cos(angle)*camBack;
+    const camY=player.y-Math.sin(angle)*camBack;
+    const proj=this._mkProj(camX,camY,angle,camH,focalLen,W,H,horizonY);
+
+    // Sky
+    this._drawSkyPerspective(ctx,W,H,horizonY,camX,camY);
+
+    // Ground base fill below horizon
+    const groundColors={desert:'#9a7030',forest:'#192e14',night:'#05080f',ice:'#aac8e0'};
+    ctx.fillStyle=groundColors[this.currentTrack.theme]||'#2d4a20';
+    ctx.fillRect(0,horizonY,W,H-horizonY);
+
+    // Track segments
+    this._drawTrackPerspective(ctx,W,H,proj,horizonY);
+
+    // Start grid boxes
+    this._drawStartGrid3D(ctx,proj,horizonY);
+
+    // Boost pads & pickups (projected)
+    this._drawObjectsPerspective(ctx,proj,horizonY);
+
+    // Karts
+    this._drawKartsPerspective(ctx,W,H,proj,horizonY,camX,camY,fp);
+
+    // Cockpit frame for first-person
+    if(fp) this._drawCockpit(ctx,W,H,player);
+  }
+
+  _drawSkyPerspective(ctx,W,H,horizonY,camX,camY){
+    const track=this.currentTrack,n=this.dayTime;
+    const skies={
+      desert:['#e8c060','#d4902a'],
+      forest:['#3a78c4','#6aaae0'],
+      night: [`hsl(220,${Math.round(40-n*20)}%,${Math.round(30-n*22)}%)`,`hsl(230,${Math.round(50-n*30)}%,${Math.round(8-n*4)}%)`],
+      ice:   ['#b0d4f4','#ddeeff']
+    };
+    const [s1,s2]=skies[track.theme]||['#3a78c4','#6aaae0'];
+    const gd=ctx.createLinearGradient(0,0,0,horizonY);
+    gd.addColorStop(0,s1);gd.addColorStop(1,s2);
+    ctx.fillStyle=gd;ctx.fillRect(0,0,W,horizonY);
+
+    if(track.theme==='night'&&n>0.2){
+      // City skyline silhouette on horizon
+      ctx.fillStyle=`rgba(5,6,18,0.92)`;
+      let bx=0,seed=137;
+      while(bx<W+100){seed=(seed*1664525+1013904223)&0xffffffff;const bw=20+(seed%45),bh=18+(seed%55);ctx.fillRect(bx,horizonY-bh,bw,bh);bx+=bw+3;}
+      // Neon dots on buildings
+      ctx.fillStyle=`rgba(255,80,200,${n*0.7})`;
+      for(let x=40;x<W;x+=80){ctx.beginPath();ctx.arc(x,horizonY-20-(x*7%35),2,0,Math.PI*2);ctx.fill();}
+    }
+    if(track.theme==='ice'){
+      // Mountain silhouettes
+      ctx.fillStyle='rgba(180,210,240,0.6)';
+      ctx.beginPath();ctx.moveTo(0,horizonY);
+      for(let x=0;x<=W;x+=60){ctx.lineTo(x,horizonY-(20+Math.abs(Math.sin(x*0.03+camX*0.001))*55));}
+      ctx.lineTo(W,horizonY);ctx.closePath();ctx.fill();
+    }
+  }
+
+  _drawTrackPerspective(ctx,W,H,proj,horizonY){
+    const track=this.currentTrack,sp=this.spline,n=sp.length;
+    const hw=track.trackWidth/2,grassW=220,curbW=12;
+    const near=nearestOnSpline(sp,this.player);
+    const roadColor=track.trackColor;
+    const grassColors={desert:['#a07828','#c49a40'],forest:['#1a4012','#235218'],night:['#080c14','#0c1020'],ice:['#90b4cc','#a8c8e0']};
+    const [gc1,gc2]=grassColors[track.theme]||['#1a4012','#235218'];
+    const curbA='#cc1111',curbB='#ffffff';
+    const lineColor=track.theme==='night'?'#0088cc':track.theme==='ice'?'rgba(200,230,255,0.5)':'#ddbb00';
+
+    for(let i=200;i>=0;i--){
+      const idx=(near.idx+i)%n,nidx=(near.idx+i+1)%n;
+      const pt=sp[idx],npt=sp[nidx];
+      const tx=npt.x-pt.x,ty=npt.y-pt.y,tl=Math.sqrt(tx*tx+ty*ty)||1;
+      const px=-ty/tl,py=tx/tl;
+
+      const rl=proj(pt.x+px*hw,pt.y+py*hw),rr=proj(pt.x-px*hw,pt.y-py*hw);
+      const nl=proj(npt.x+px*hw,npt.y+py*hw),nr=proj(npt.x-px*hw,npt.y-py*hw);
+      if(!rl||!rr||!nl||!nr)continue;
+
+      const cy=p=>Math.max(p.sy,horizonY);
+      const cx=p=>clamp(p.sx,-300,W+300);
+
+      // Grass
+      const gc=Math.floor(i/5)%2?gc1:gc2;
+      const gl=proj(pt.x+px*(hw+grassW),pt.y+py*(hw+grassW));
+      const ngll=proj(npt.x+px*(hw+grassW),npt.y+py*(hw+grassW));
+      const grr=proj(pt.x-px*(hw+grassW),pt.y-py*(hw+grassW));
+      const ngrr=proj(npt.x-px*(hw+grassW),npt.y-py*(hw+grassW));
+      ctx.fillStyle=gc;
+      if(gl&&ngll){ctx.beginPath();ctx.moveTo(cx(gl),cy(gl));ctx.lineTo(cx(rl),cy(rl));ctx.lineTo(cx(nl),cy(nl));ctx.lineTo(cx(ngll),cy(ngll));ctx.closePath();ctx.fill();}
+      if(grr&&ngrr){ctx.beginPath();ctx.moveTo(cx(rr),cy(rr));ctx.lineTo(cx(grr),cy(grr));ctx.lineTo(cx(ngrr),cy(ngrr));ctx.lineTo(cx(nr),cy(nr));ctx.closePath();ctx.fill();}
+
+      // Curbs
+      const curb=Math.floor(i/4)%2?curbA:curbB;
+      const cl=proj(pt.x+px*(hw+curbW),pt.y+py*(hw+curbW));
+      const ncl=proj(npt.x+px*(hw+curbW),npt.y+py*(hw+curbW));
+      const cr=proj(pt.x-px*(hw+curbW),pt.y-py*(hw+curbW));
+      const ncr=proj(npt.x-px*(hw+curbW),npt.y-py*(hw+curbW));
+      ctx.fillStyle=curb;
+      if(cl&&ncl){ctx.beginPath();ctx.moveTo(cx(cl),cy(cl));ctx.lineTo(cx(rl),cy(rl));ctx.lineTo(cx(nl),cy(nl));ctx.lineTo(cx(ncl),cy(ncl));ctx.closePath();ctx.fill();}
+      if(cr&&ncr){ctx.beginPath();ctx.moveTo(cx(rr),cy(rr));ctx.lineTo(cx(cr),cy(cr));ctx.lineTo(cx(ncr),cy(ncr));ctx.lineTo(cx(nr),cy(nr));ctx.closePath();ctx.fill();}
+
+      // Road surface
+      ctx.fillStyle=roadColor;
+      ctx.beginPath();ctx.moveTo(cx(rl),cy(rl));ctx.lineTo(cx(rr),cy(rr));ctx.lineTo(cx(nr),cy(nr));ctx.lineTo(cx(nl),cy(nl));ctx.closePath();ctx.fill();
+
+      // Centre dashes
+      if(i%10<5){
+        const cl2=proj(pt.x,pt.y),nl2=proj(npt.x,npt.y);
+        if(cl2&&nl2&&cl2.sy>horizonY){ctx.strokeStyle=lineColor;ctx.lineWidth=Math.max(1,cl2.scale*2);ctx.beginPath();ctx.moveTo(cl2.sx,Math.max(cl2.sy,horizonY));ctx.lineTo(nl2.sx,Math.max(nl2.sy,horizonY));ctx.stroke();}
+      }
+    }
+  }
+
+  _drawObjectsPerspective(ctx,proj,horizonY){
+    // Boost pads
+    this.boostPads.forEach(pad=>{
+      const p=proj(pad.x,pad.y);if(!p||p.sy<horizonY)return;
+      const sz=Math.max(4,22*p.scale);
+      ctx.save();ctx.translate(p.sx,p.sy);
+      ctx.fillStyle='rgba(255,200,0,0.85)';ctx.fillRect(-sz,-sz*0.4,sz*2,sz*0.8);
+      ctx.fillStyle='#fff';ctx.font=`bold ${Math.round(sz*0.7)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('▶▶',0,0);
+      ctx.restore();
+    });
+    // Power-up pickups
+    this.powerUpPickups.forEach(pu=>{
+      if(!pu.available)return;
+      const p=proj(pu.x,pu.y);if(!p||p.sy<horizonY)return;
+      const sz=Math.max(3,18*p.scale);
+      const c={boost:'#ff8800',shield:'#44aaff',oil:'#882299'}[pu.type]||'#fff';
+      ctx.save();ctx.translate(p.sx,p.sy-sz);
+      ctx.fillStyle=c;ctx.beginPath();ctx.arc(0,0,sz,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.font=`bold ${Math.round(sz*0.9)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(pu.type==='boost'?'B':pu.type==='shield'?'S':'O',0,0);
+      ctx.restore();
+    });
+    // Oil slicks
+    this.oilSlicks.forEach(oil=>{
+      const p=proj(oil.x,oil.y);if(!p||p.sy<horizonY)return;
+      const sz=Math.max(4,oil.radius*p.scale);
+      ctx.save();ctx.globalAlpha=Math.min(oil.life/3,1)*0.6;
+      ctx.fillStyle='rgba(40,10,60,0.9)';ctx.beginPath();ctx.ellipse(p.sx,p.sy,sz,sz*0.35,0,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  _drawKartsPerspective(ctx,W,H,proj,horizonY,camX,camY,isFirstPerson){
+    const entries=[];
+    this.aiKarts.forEach(k=>entries.push({kart:k,isPlayer:false}));
+    this.opponents.forEach((o,i)=>{if(o&&i!==this.mySlot)entries.push({kart:o,isPlayer:false});});
+    if(!isFirstPerson&&this.player)entries.push({kart:this.player,isPlayer:true});
+    // Sort far to near
+    entries.sort((a,b)=>{
+      const da=(a.kart.x-camX)**2+(a.kart.y-camY)**2;
+      const db=(b.kart.x-camX)**2+(b.kart.y-camY)**2;
+      return db-da;
+    });
+    entries.forEach(({kart,isPlayer})=>{
+      const p=proj(kart.x,kart.y);
+      if(!p||p.sy<horizonY-10)return;
+      const w=Math.max(4,kart.width*p.scale*0.9);
+      const h=Math.max(3,kart.height*p.scale*2.2);
+      ctx.save();
+      // Shadow
+      ctx.fillStyle='rgba(0,0,0,0.35)';ctx.beginPath();ctx.ellipse(p.sx,p.sy,w*0.6,w*0.18,0,0,Math.PI*2);ctx.fill();
+      // Body
+      ctx.fillStyle=kart.bodyColor||'#555';ctx.fillRect(p.sx-w/2,p.sy-h,w,h*0.7);
+      // Cockpit tint
+      ctx.fillStyle=kart.color||'#888';ctx.fillRect(p.sx-w*0.35,p.sy-h,w*0.7,h*0.45);
+      // Windshield
+      ctx.fillStyle='rgba(180,220,255,0.5)';ctx.fillRect(p.sx-w*0.28,p.sy-h*0.95,w*0.56,h*0.28);
+      // Front wheels
+      ctx.fillStyle='#111';
+      ctx.fillRect(p.sx-w*0.62,p.sy-h*0.2,w*0.24,h*0.22);
+      ctx.fillRect(p.sx+w*0.38,p.sy-h*0.2,w*0.24,h*0.22);
+      // Rear wheels
+      ctx.fillRect(p.sx-w*0.62,p.sy-h*0.72,w*0.2,h*0.2);
+      ctx.fillRect(p.sx+w*0.42,p.sy-h*0.72,w*0.2,h*0.2);
+      // Spoiler line
+      ctx.fillStyle=kart.color||'#888';ctx.fillRect(p.sx-w*0.5,p.sy-h*0.98,w,h*0.06);
+      // Shield
+      if(kart.shieldTimer>0){
+        const pulse=0.7+0.3*Math.sin(Date.now()*0.01);
+        ctx.strokeStyle=`rgba(68,170,255,${pulse})`;ctx.lineWidth=Math.max(1,p.scale*2);
+        ctx.beginPath();ctx.arc(p.sx,p.sy-h*0.5,Math.max(w,h)*0.7,0,Math.PI*2);ctx.stroke();
+      }
+      // Boost flames
+      if(kart.boostTimer>0){
+        const fz=Math.max(2,h*0.3);
+        ctx.fillStyle='rgba(255,150,0,0.85)';ctx.beginPath();ctx.arc(p.sx-w*0.2,p.sy-h*0.04,fz,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='rgba(255,220,0,0.7)';ctx.beginPath();ctx.arc(p.sx+w*0.2,p.sy-h*0.04,fz*0.7,0,Math.PI*2);ctx.fill();
+      }
+      // Player label in third-person
+      if(isPlayer&&w>12){
+        ctx.fillStyle='rgba(0,0,0,0.5)';ctx.font=`bold ${Math.round(Math.max(8,w*0.5))}px Arial`;
+        ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('YOU',p.sx,p.sy-h-2);
+      }
+      ctx.restore();
+    });
+  }
+
+  // ─── START GRID (2D) ─────────────────────────────────────
+  _drawStartGrid(ctx){
+    if(!this.currentTrack)return;
+    const grid=this.currentTrack.grid;
+    const colors=['#ffdd00','#ffffff','#ff4400','#44aaff'];
+    grid.forEach((g,i)=>{
+      ctx.save();ctx.translate(g.x,g.y);ctx.rotate(g.angle+Math.PI/2);
+      const bw=14,bh=26;
+      // Painted box fill
+      ctx.fillStyle=colors[i]+'44';ctx.fillRect(-bw,-bh,bw*2,bh*2);
+      // Box border
+      ctx.strokeStyle=colors[i];ctx.lineWidth=2.5;ctx.strokeRect(-bw,-bh,bw*2,bh*2);
+      // Cross lines
+      ctx.strokeStyle=colors[i]+'88';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(0,-bh);ctx.lineTo(0,bh);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-bw,0);ctx.lineTo(bw,0);ctx.stroke();
+      // Position number
+      ctx.fillStyle=colors[i];ctx.font='bold 11px Arial';
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(`P${i+1}`,0,0);
+      ctx.restore();
+    });
+  }
+
+  // ─── START GRID (3D) ─────────────────────────────────────
+  _drawStartGrid3D(ctx,proj,horizonY){
+    if(!this.currentTrack)return;
+    const grid=this.currentTrack.grid;
+    const colors=['#ffdd00','#ffffff','#ff4400','#44aaff'];
+    grid.forEach((g,i)=>{
+      const cos=Math.cos(g.angle+Math.PI/2),sin=Math.sin(g.angle+Math.PI/2);
+      const bw=14,bh=26;
+      const corners=[
+        {wx:g.x+cos*bh-sin*bw,wy:g.y+sin*bh+cos*bw},
+        {wx:g.x+cos*bh+sin*bw,wy:g.y+sin*bh-cos*bw},
+        {wx:g.x-cos*bh+sin*bw,wy:g.y-sin*bh-cos*bw},
+        {wx:g.x-cos*bh-sin*bw,wy:g.y-sin*bh+cos*bw},
+      ];
+      const pts=corners.map(c=>proj(c.wx,c.wy));
+      if(!pts.every(Boolean))return;
+      const clamped=pts.map(p=>({sx:p.sx,sy:Math.max(p.sy,horizonY)}));
+      ctx.fillStyle=colors[i]+'55';
+      ctx.beginPath();ctx.moveTo(clamped[0].sx,clamped[0].sy);
+      clamped.slice(1).forEach(p=>ctx.lineTo(p.sx,p.sy));ctx.closePath();ctx.fill();
+      ctx.strokeStyle=colors[i];ctx.lineWidth=Math.max(1,pts[0].scale*1.8);
+      ctx.beginPath();ctx.moveTo(clamped[0].sx,clamped[0].sy);
+      clamped.slice(1).forEach(p=>ctx.lineTo(p.sx,p.sy));ctx.closePath();ctx.stroke();
+      // Position label
+      const mid=pts.reduce((a,p)=>({sx:a.sx+p.sx/4,sy:a.sy+p.sy/4}),{sx:0,sy:0});
+      if(mid.sy>horizonY){
+        const fs=Math.max(8,pts[0].scale*14);
+        ctx.fillStyle=colors[i];ctx.font=`bold ${Math.round(fs)}px Arial`;
+        ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(`P${i+1}`,mid.sx,mid.sy);
+      }
+    });
+  }
+
+  // ─── COCKPIT (1st person) ────────────────────────────────
+  _drawCockpit(ctx,W,H,player){
+    // Dashboard
+    ctx.fillStyle='rgba(30,20,10,0.82)';
+    ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(W,H);
+    ctx.lineTo(W,H*0.82);ctx.bezierCurveTo(W*0.7,H*0.78,W*0.3,H*0.78,0,H*0.82);
+    ctx.closePath();ctx.fill();
+    // Steering wheel
+    const cx=W/2,cy=H*0.88,r=H*0.055;
+    ctx.strokeStyle='#444';ctx.lineWidth=H*0.018;
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='#222';ctx.lineWidth=H*0.012;
+    for(let a=0;a<Math.PI*2;a+=Math.PI*2/3){ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a+player.angle*0.3)*r,cy+Math.sin(a+player.angle*0.3)*r);ctx.stroke();}
+    // Speedometer
+    const spd=Math.round(Math.abs(player.speed)*0.18);
+    ctx.fillStyle='rgba(0,0,0,0.6)';ctx.beginPath();ctx.arc(W*0.88,H*0.9,H*0.055,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#0f0';ctx.font=`bold ${Math.round(H*0.026)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(`${spd}`,W*0.88,H*0.88);
+    ctx.fillStyle='#888';ctx.font=`${Math.round(H*0.016)}px Arial`;ctx.fillText('km/h',W*0.88,H*0.92);
+    // Kart color strip
+    ctx.fillStyle=player.color+'cc';ctx.fillRect(W*0.35,H*0.9,W*0.3,H*0.035);
+  }
+
+  // ─── PAUSE OVERLAY ───────────────────────────────────────
+  _drawPauseOverlay(ctx,W,H){
+    ctx.fillStyle='rgba(0,0,0,0.62)';ctx.fillRect(0,0,W,H);
+    ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font=`bold ${Math.round(W*0.09)}px "Segoe UI",Arial`;
+    ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillText('PAUSED',W/2+3,H/2-24+3);
+    ctx.fillStyle='#ffcc00';ctx.fillText('PAUSED',W/2,H/2-24);
+    ctx.font=`${Math.round(W*0.026)}px "Segoe UI",Arial`;
+    ctx.fillStyle='rgba(255,255,255,0.55)';ctx.fillText('P or ESC to resume · V to change view',W/2,H/2+28);
+    ctx.restore();
+  }
+
   // ─── GAME LOOP ───────────────────────────────────────────
   _loop(timestamp){
     const dt=Math.min((timestamp-(this.lastTime||timestamp))/1000,0.05);
     this.lastTime=timestamp;
-    if(this.settings.ghost&&this.state==='racing')this.ghost.record(this.player,dt);
+    if(this.settings.ghost&&this.state==='racing'&&!this.paused)this.ghost.record(this.player,dt);
     this._update(dt);this._render();
     requestAnimationFrame(t=>this._loop(t));
   }
