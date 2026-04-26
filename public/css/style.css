@@ -272,6 +272,19 @@ html, body {
 /* joystick mode: hide d-pad, keep gas/brake */
 #mobileControls.joystick-mode .no-joystick { visibility:hidden; pointer-events:none; }
 
+/* ── CHAMPIONSHIP STANDINGS ──────────────────────────────── */
+.champ-standings {
+  background: rgba(255,204,0,0.08);
+  border: 1px solid rgba(255,204,0,0.3);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-top: 12px;
+  min-width: 200px;
+}
+.champ-title { font-size: 1rem; font-weight: 700; color: #ffcc00; margin-bottom: 10px; text-align: center; }
+.champ-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.88rem; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.champ-row:last-child { border-bottom: none; }
+
 /* ── RACE HUD BUTTONS ─────────────────────────────────────── */
 #raceHUDButtons {
   position: fixed;
