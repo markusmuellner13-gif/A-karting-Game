@@ -25,6 +25,7 @@ class ParticleSystem {
   constructor(){this.particles=[];this.skidMarks=[];}
 
   emit(x,y,type,count=1,opts={}){
+    if(this._mobileCap&&this.particles.length>60)return;
     for(let i=0;i<count;i++){
       if(type==='spark')   this.particles.push(this._spark(x,y,opts));
       else if(type==='smoke') this.particles.push(this._smoke(x,y,opts));
@@ -58,59 +59,80 @@ const TRACKS = [
     id:0, name:'Sahara Circuit', description:'Fast & flowing desert track',
     theme:'desert', bgColor:'#c8a050', trackColor:'#484848',
     laps:3, trackWidth:150, traction:1.0,
-    boostPadTs:[0.08,0.42,0.76], powerUpTs:[0.18,0.38,0.62,0.82],
+    boostPadTs:[0.12,0.46,0.78], powerUpTs:[0.20,0.40,0.64,0.84],
+    // Start/finish at MIDDLE of straight — 500px before + 500px after before first corner
     waypoints:[
-      {x:380,y:2300},{x:720,y:2300},{x:1100,y:2300},{x:1500,y:2280},
-      {x:1850,y:2150},{x:2200,y:1900},{x:2500,y:1600},{x:2680,y:1300},
-      {x:2700,y:1000},{x:2580,y:780},{x:2300,y:680},{x:1980,y:700},
-      {x:1700,y:820},{x:1480,y:720},{x:1280,y:830},{x:1080,y:710},
-      {x:860,y:850},{x:600,y:1100},{x:420,y:1440},{x:330,y:1850},{x:330,y:2120}
+      {x:700,y:2300},  // 0: START/FINISH (middle of straight)
+      {x:960,y:2300},  // 1: straight continues
+      {x:1240,y:2300}, // 2: end of straight
+      {x:1560,y:2270}, // 3: first corner
+      {x:1880,y:2120},{x:2230,y:1880},{x:2530,y:1580},{x:2710,y:1280},
+      {x:2730,y:980},{x:2600,y:760},{x:2320,y:660},{x:1990,y:680},
+      {x:1720,y:800},{x:1500,y:700},{x:1300,y:820},{x:1100,y:700},
+      {x:880,y:840},{x:620,y:1090},{x:430,y:1430},
+      {x:340,y:1840},{x:280,y:2160}, // approaching straight
+      {x:265,y:2300},{x:490,y:2300}  // on straight before start line
     ],
-    grid:[{x:270,y:2262,angle:0},{x:210,y:2338,angle:0},{x:150,y:2262,angle:0},{x:90,y:2338,angle:0}]
+    grid:[{x:640,y:2262,angle:0},{x:580,y:2338,angle:0},{x:520,y:2262,angle:0},{x:460,y:2338,angle:0}]
   },
   {
     id:1, name:'Forest Rally', description:'Technical forest circuit with tight hairpins',
     theme:'forest', bgColor:'#1e4a18', trackColor:'#555',
     laps:3, trackWidth:125, traction:1.0,
-    boostPadTs:[0.1,0.44,0.74], powerUpTs:[0.2,0.4,0.65,0.85],
+    boostPadTs:[0.12,0.46,0.76], powerUpTs:[0.22,0.42,0.66,0.86],
     waypoints:[
-      {x:420,y:2450},{x:780,y:2450},{x:1180,y:2450},{x:1580,y:2400},
-      {x:1920,y:2200},{x:2200,y:1950},{x:2400,y:1680},{x:2450,y:1380},
-      {x:2350,y:1100},{x:2100,y:900},{x:1800,y:820},
-      {x:1500,y:860},{x:1300,y:980},{x:1100,y:870},
-      {x:900,y:990},{x:740,y:870},{x:590,y:1010},
-      {x:490,y:1360},{x:420,y:1700},{x:390,y:2100}
+      {x:780,y:2450},  // 0: START/FINISH (middle of straight)
+      {x:1060,y:2450}, // 1: straight after
+      {x:1360,y:2450}, // 2: end of straight
+      {x:1720,y:2400}, // 3: first corner
+      {x:1980,y:2200},{x:2240,y:1950},{x:2440,y:1680},{x:2490,y:1380},
+      {x:2390,y:1100},{x:2140,y:900},{x:1840,y:820},
+      {x:1540,y:860},{x:1340,y:975},{x:1140,y:870},
+      {x:940,y:985},{x:780,y:870},{x:630,y:988},
+      {x:510,y:1350},{x:440,y:1700},{x:400,y:2060},
+      {x:375,y:2350}, // approaching straight
+      {x:385,y:2450},{x:570,y:2450} // on straight before start
     ],
-    grid:[{x:300,y:2412,angle:0},{x:240,y:2488,angle:0},{x:180,y:2412,angle:0},{x:120,y:2488,angle:0}]
+    grid:[{x:718,y:2412,angle:0},{x:658,y:2488,angle:0},{x:598,y:2412,angle:0},{x:538,y:2488,angle:0}]
   },
   {
     id:2, name:'Night City', description:'Urban night circuit with neon lights',
     theme:'night', bgColor:'#050812', trackColor:'#2a2a3e',
     laps:3, trackWidth:140, traction:1.0,
-    boostPadTs:[0.07,0.36,0.70], powerUpTs:[0.18,0.38,0.60,0.82],
+    boostPadTs:[0.10,0.40,0.72], powerUpTs:[0.20,0.40,0.62,0.82],
     waypoints:[
-      {x:370,y:2600},{x:750,y:2600},{x:1200,y:2600},{x:1700,y:2600},
-      {x:2150,y:2550},{x:2550,y:2350},{x:2800,y:2050},{x:2850,y:1700},
-      {x:2750,y:1400},{x:2450,y:1150},{x:2100,y:1050},{x:1750,y:1100},
-      {x:1500,y:1250},{x:1280,y:1100},{x:1080,y:1260},
-      {x:840,y:1550},{x:640,y:1900},{x:470,y:2250},{x:365,y:2460}
+      {x:1050,y:2600}, // 0: START/FINISH (middle of long straight)
+      {x:1400,y:2600}, // 1: straight after
+      {x:1800,y:2600}, // 2: end of long straight
+      {x:2260,y:2550}, // 3: first corner
+      {x:2610,y:2340},{x:2850,y:2040},{x:2890,y:1700},
+      {x:2790,y:1400},{x:2490,y:1140},{x:2140,y:1040},{x:1780,y:1090},
+      {x:1520,y:1240},{x:1300,y:1085},{x:1100,y:1250},
+      {x:860,y:1540},{x:660,y:1890},{x:480,y:2240},
+      {x:368,y:2460}, // approaching straight
+      {x:360,y:2600},{x:720,y:2600} // on straight before start
     ],
-    grid:[{x:255,y:2562,angle:0},{x:195,y:2638,angle:0},{x:135,y:2562,angle:0},{x:75,y:2638,angle:0}]
+    grid:[{x:978,y:2562,angle:0},{x:908,y:2638,angle:0},{x:838,y:2562,angle:0},{x:768,y:2638,angle:0}]
   },
   {
     id:3, name:'Ice Valley', description:'Slippery mountain circuit',
     theme:'ice', bgColor:'#d0e8f5', trackColor:'#c0d8ee',
     laps:3, trackWidth:145, traction:0.38,
-    boostPadTs:[0.09,0.40,0.70], powerUpTs:[0.18,0.40,0.62,0.82],
+    boostPadTs:[0.11,0.42,0.72], powerUpTs:[0.20,0.42,0.64,0.84],
     waypoints:[
-      {x:420,y:2700},{x:820,y:2700},{x:1260,y:2700},{x:1700,y:2660},
-      {x:2100,y:2520},{x:2500,y:2280},{x:2820,y:1980},{x:3050,y:1650},
-      {x:3100,y:1300},{x:2980,y:1000},{x:2700,y:800},{x:2350,y:720},
-      {x:1980,y:750},{x:1650,y:880},
-      {x:1420,y:775},{x:1200,y:890},{x:1000,y:775},
-      {x:770,y:1060},{x:570,y:1390},{x:420,y:1760},{x:365,y:2200}
+      {x:820,y:2700},  // 0: START/FINISH (middle of straight)
+      {x:1100,y:2700}, // 1: straight after
+      {x:1460,y:2700}, // 2: end of straight
+      {x:1870,y:2655}, // 3: first corner
+      {x:2150,y:2510},{x:2550,y:2270},{x:2870,y:1960},{x:3100,y:1630},
+      {x:3150,y:1280},{x:3030,y:980},{x:2750,y:780},{x:2400,y:700},
+      {x:2030,y:730},{x:1700,y:860},
+      {x:1470,y:755},{x:1250,y:870},{x:1050,y:755},
+      {x:820,y:1040},{x:620,y:1370},{x:465,y:1740},
+      {x:385,y:2185}, // approaching straight
+      {x:375,y:2550},{x:385,y:2700},{x:612,y:2700} // on straight before start
     ],
-    grid:[{x:300,y:2662,angle:0},{x:240,y:2738,angle:0},{x:180,y:2662,angle:0},{x:120,y:2738,angle:0}]
+    grid:[{x:752,y:2662,angle:0},{x:692,y:2738,angle:0},{x:632,y:2662,angle:0},{x:572,y:2738,angle:0}]
   }
 ];
 
@@ -372,6 +394,8 @@ class Game {
     this.champMode=false;this.champRaceIdx=0;
     this.champPoints=[]; // [{label,pts,color}]
 
+    this._isMobile=('ontouchstart' in window)||navigator.maxTouchPoints>0;
+
     this._setupCanvas();
     this._bindUI();
     this._applySettings();
@@ -575,8 +599,16 @@ class Game {
     }
   }
 
+  _lockOrientation(){
+    if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});
+  }
+  _unlockOrientation(){
+    if(screen.orientation&&screen.orientation.unlock)try{screen.orientation.unlock();}catch(e){}
+  }
+
   _setState(state){
     this.state=state;
+    if(state==='menu'||state==='settings'||state==='selecting-kart'||state==='selecting-track'||state==='mode-select')this._unlockOrientation();
     const map={'menu':'menuScreen','selecting-kart':'kartSelectScreen','selecting-track':'trackSelectScreen',
       'mode-select':'modeSelectScreen','multi-lobby':'multiLobbyScreen','results':'resultsScreen','settings':'settingsScreen'};
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -625,6 +657,7 @@ class Game {
 
   // ─── RACE START ──────────────────────────────────────────
   _startRace(){
+    this._lockOrientation();
     this.audio.start();
     const td=TRACKS[this.selectedTrack],kd=KARTS[this.selectedKart];
     this.currentTrack=td;this.spline=generateSpline(td.waypoints,20);
@@ -667,6 +700,7 @@ class Game {
     this.countdownTimer=3.6;this._lapFlash=0;this._lapFlashMsg='';this._netTimer=0;
     this.camera={x:grid[myIdx].x,y:grid[myIdx].y};
     this.particles=new ParticleSystem();
+    this.particles._mobileCap=this._isMobile;
 
     this.ghost.startRecording();
     this._setState('countdown');
@@ -1501,7 +1535,8 @@ class Game {
     const curbA='#cc1111',curbB='#ffffff';
     const lineColor=track.theme==='night'?'#0088cc':track.theme==='ice'?'rgba(200,230,255,0.5)':'#ddbb00';
 
-    for(let i=200;i>=0;i--){
+    const segCount=this._isMobile?130:200;
+    for(let i=segCount;i>=0;i--){
       const idx=(near.idx+i)%n,nidx=(near.idx+i+1)%n;
       const pt=sp[idx],npt=sp[nidx];
       const tx=npt.x-pt.x,ty=npt.y-pt.y,tl=Math.sqrt(tx*tx+ty*ty)||1;

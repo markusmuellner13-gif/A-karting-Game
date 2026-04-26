@@ -24,6 +24,11 @@ html, body {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  /* Respect iOS notch / Android cutout */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 #gameCanvas {
@@ -39,16 +44,22 @@ html, body {
   align-items: center; justify-content: center;
   background: rgba(8,8,20,0.96);
   z-index: 50;
-  padding: clamp(12px,3vw,32px);
+  padding: clamp(10px,2vw,24px);
+  padding-top: max(clamp(10px,2vw,24px), env(safe-area-inset-top));
+  padding-bottom: max(clamp(10px,2vw,24px), env(safe-area-inset-bottom));
+  padding-left: max(clamp(10px,2vw,24px), env(safe-area-inset-left));
+  padding-right: max(clamp(10px,2vw,24px), env(safe-area-inset-right));
   overflow-y: auto;
 }
 .screen.active { display: flex; }
 
 .screen-content {
   width: 100%; max-width: 960px;
+  max-height: 100dvh;
   display: flex; flex-direction: column;
   align-items: center;
-  gap: clamp(14px,2.5vh,26px);
+  gap: clamp(10px,2vh,22px);
+  overflow-y: auto;
 }
 
 /* ── LOGO ─────────────────────────────────────────────────── */
@@ -242,7 +253,10 @@ html, body {
 
 /* ── MOBILE CONTROLS ──────────────────────────────────────── */
 #mobileControls {
-  position:fixed; bottom:clamp(10px,3vh,26px); left:0; right:0;
+  position:fixed;
+  bottom: max(clamp(10px,3vh,26px), env(safe-area-inset-bottom));
+  left: max(0px, env(safe-area-inset-left));
+  right: max(0px, env(safe-area-inset-right));
   display:none; justify-content:space-between;
   padding:0 clamp(10px,3vw,22px); z-index:200; pointer-events:none;
 }
