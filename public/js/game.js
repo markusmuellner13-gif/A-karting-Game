@@ -9,7 +9,7 @@ function dist(a,b){const dx=a.x-b.x,dy=a.y-b.y;return Math.sqrt(dx*dx+dy*dy);}
 function normalizeAngle(a){while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a;}
 function catmullRom(p0,p1,p2,p3,t){const t2=t*t,t3=t2*t;return{x:.5*((2*p1.x)+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3),y:.5*((2*p1.y)+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3)};}
 function generateSpline(wp,segs){const pts=[],n=wp.length;for(let i=0;i<n;i++){const p0=wp[(i-1+n)%n],p1=wp[i],p2=wp[(i+1)%n],p3=wp[(i+2)%n];for(let j=0;j<segs;j++)pts.push(catmullRom(p0,p1,p2,p3,j/segs));}return pts;}
-function nearestOnSpline(sp,pos){let best=Infinity,idx=0;const px=pos.x,py=pos.y;for(let i=0,n=sp.length;i<n;i++){const dx=sp[i].x-px,dy=sp[i].y-py,d2=dx*dx+dy*dy;if(d2<best){best=d2;idx=i;}}return{d:Math.sqrt(best),idx};}
+function nearestOnSpline(sp,pos,hint=0){const n=sp.length,px=pos.x,py=pos.y;if(hint>0){let best=Infinity,idx=hint;for(let k=-70;k<=70;k++){const i=(hint+k+n)%n;const dx=sp[i].x-px,dy=sp[i].y-py,d2=dx*dx+dy*dy;if(d2<best){best=d2;idx=i;}}return{d:Math.sqrt(best),idx};}let best=Infinity,idx=0;for(let i=0;i<n;i++){const dx=sp[i].x-px,dy=sp[i].y-py,d2=dx*dx+dy*dy;if(d2<best){best=d2;idx=i;}}return{d:Math.sqrt(best),idx};}
 
 // ═══════════════════════════════════════════════════════════
 //  SETTINGS
@@ -289,13 +289,15 @@ class Kart {
     this.x=x;this.y=y;this.angle=angle;this.speed=0;this.vx=0;this.vy=0;
     this.offTrack=false;this.isPlayer=false;this.lap=1;
     this.steeringAngle=0; // visual steering wheel rotation: -1 full left, +1 full right
+    this._splineHint=0; // cached nearest spline index for fast windowed search
     // Drift / boost / powerup state
     this.isDrifting=false;this.driftCharge=0;this.boostTimer=0;this.shieldTimer=0;this.spinTimer=0;this.powerUp=null;
     this._itemPressed=false;
   }
 
   update(input,spline,trackWidth,dt,traction=1.0){
-    const near=nearestOnSpline(spline,this);
+    const near=nearestOnSpline(spline,this,this._splineHint);
+    this._splineHint=near.idx;
     this.offTrack=near.d>trackWidth/2+10;
     // Off-track: speed tapers off smoothly, not a hard cap
     const offPenalty=this.offTrack?Math.max(0.42,1-(near.d-(trackWidth/2+10))*0.004):1.0;
@@ -413,7 +415,7 @@ class AIKart extends Kart {
 
     // Rubber-band
     if(this._playerRef){
-      const pNear=nearestOnSpline(this._spline,this._playerRef);
+      const pNear=nearestOnSpline(this._spline,this._playerRef,this._playerRef._splineHint);
       const aiProg=(this.lap-1)+near.idx/n;
       const pProg=(this._playerRef.lap-1)+pNear.idx/n;
       const gap=aiProg-pProg;
@@ -815,6 +817,23 @@ class Game {
   }
 
   // ─── RACE START ──────────────────────────────────────────
+  _computeGrid(spline,trackWidth){
+    const n=spline.length;
+    const steps=Math.max(14,Math.floor(n/28));
+    const sideOff=trackWidth*0.22;
+    return[0,1,2,3].map(slot=>{
+      const idx=((n-steps*(slot+1))%n+n)%n;
+      const pt=spline[idx];
+      const prev=spline[(idx-1+n)%n],next=spline[(idx+1)%n];
+      const fx=next.x-prev.x,fy=next.y-prev.y;
+      const fl=Math.sqrt(fx*fx+fy*fy)||1;
+      const fxn=fx/fl,fyn=fy/fl;
+      const sign=(slot%2===0)?1:-1;
+      // Perpendicular: (fyn,-fxn) = right side; negate for left
+      return{x:pt.x+fyn*sign*sideOff,y:pt.y-fxn*sign*sideOff,angle:Math.atan2(fy,fx)};
+    });
+  }
+
   _startRace(){
     this._lockOrientation();
     this.audio.start();
@@ -838,11 +857,12 @@ class Game {
     this.oilSlicks=[];
     this._boostPadCooldown=new Map();
 
-    const grid=td.grid;
+    const grid=this._computeGrid(this.spline,td.trackWidth);
     const myIdx=this.isMultiplayer?this.mySlot:0;
     this.player=new Kart({...kd},grid[myIdx].x,grid[myIdx].y,grid[myIdx].angle);
     this.player.isPlayer=true;
     this.player._onActivate=(type)=>this._activatePlayerItem(type);
+    this.audio.setKartType(this.selectedKart);
 
     if(this.isMultiplayer){
       this.aiKarts=[];
@@ -1092,7 +1112,7 @@ class Game {
 
   // ─── LAP DETECTION ──────────────────────────────────────
   _checkLaps(){
-    const near=nearestOnSpline(this.spline,this.player);
+    const near=nearestOnSpline(this.spline,this.player,this.player._splineHint);
     const n=this.spline.length;
     this.checkpoints.forEach(cp=>{if(!cp.passed&&dist(this.player,cp.pt)<95)cp.passed=true;});
     const allPassed=this.checkpoints.every(c=>c.passed);
@@ -1199,7 +1219,7 @@ class Game {
   // ─── LEADERBOARD ─────────────────────────────────────────
   _getLeaderboard(){
     const entries=[];
-    const progress=(kart,lap)=>{const near=nearestOnSpline(this.spline,kart);return(lap-1)+near.idx/this.spline.length;};
+    const progress=(kart,lap)=>{const near=nearestOnSpline(this.spline,kart,kart._splineHint||0);return(lap-1)+near.idx/this.spline.length;};
     entries.push({label:'YOU',color:this.player.color,prog:progress(this.player,this.lap)});
     this.aiKarts.forEach((ai,i)=>entries.push({label:`AI${i+1}`,color:ai.color,prog:progress(ai,ai.lap)}));
     this.opponents.forEach((o,i)=>{if(o&&i!==this.mySlot)entries.push({label:`P${i+1}`,color:o.color,prog:progress(o,o.netLap||1)});});
@@ -1580,16 +1600,28 @@ class Game {
   }
 
   _drawSoloHUD(ctx,W,H,speed,curLap,lapLabel){
-    ctx.fillStyle='rgba(0,0,0,0.68)';ctx.fillRect(0,0,W,66);ctx.textBaseline='middle';
-    ctx.textAlign='left';ctx.font=`bold 20px "Segoe UI",Arial`;ctx.fillStyle='#ddd';ctx.fillText(`TOTAL  ${this._fmt(this.raceTime)}`,16,22);
-    ctx.font=`14px "Segoe UI",Arial`;ctx.fillStyle='rgba(255,204,0,0.85)';ctx.fillText(`LAP TIME  ${this._fmt(curLap)}`,16,48);
-    ctx.textAlign='center';ctx.font=`bold 24px "Segoe UI",Arial`;ctx.fillStyle='#fff';ctx.fillText(lapLabel,W/2,33);
-    ctx.textAlign='right';ctx.font=`bold 20px "Segoe UI",Arial`;ctx.fillStyle='#ffcc00';ctx.fillText(`${speed} km/h`,W-16,22);
-    if(this.bestLap<Infinity){ctx.font=`13px "Segoe UI",Arial`;ctx.fillStyle='rgba(255,255,255,0.5)';ctx.fillText(`BEST  ${this._fmt(this.bestLap)}`,W-16,48);}
+    // Top bar
+    ctx.fillStyle='rgba(0,0,0,0.72)';ctx.fillRect(0,0,W,68);
+    // Red accent line at top
+    ctx.fillStyle='#cc0000';ctx.fillRect(0,0,W,3);
+    ctx.textBaseline='middle';
+    ctx.textAlign='left';ctx.font=`bold 18px "Segoe UI",Arial`;ctx.fillStyle='#e8e8e8';ctx.fillText(`${this._fmt(this.raceTime)}`,16,20);
+    ctx.font=`12px "Segoe UI",Arial`;ctx.fillStyle='rgba(255,200,0,0.85)';ctx.fillText(`LAP  ${this._fmt(curLap)}`,16,46);
+    ctx.textAlign='center';ctx.font=`bold 22px "Segoe UI",Arial`;ctx.fillStyle='#fff';ctx.fillText(lapLabel,W/2,30);
+    ctx.textAlign='right';ctx.font=`bold 22px "Segoe UI",Arial`;ctx.fillStyle='#ffcc00';ctx.fillText(`${speed}`,W-54,20);
+    ctx.font=`11px "Segoe UI",Arial`;ctx.fillStyle='rgba(255,255,255,0.5)';ctx.fillText('km/h',W-16,20);
+    if(this.bestLap<Infinity){ctx.font=`11px "Segoe UI",Arial`;ctx.fillStyle='rgba(255,255,255,0.45)';ctx.fillText(`BEST ${this._fmt(this.bestLap)}`,W-16,46);}
+    // RPM bar (full width, below top bar)
+    const rpm=Math.abs(this.player.speed)/(this.player.maxSpeed||1);
+    const barW=W*0.38,barH=5,barX=W/2-barW/2,barY=62;
+    ctx.fillStyle='rgba(255,255,255,0.1)';ctx.fillRect(barX,barY,barW,barH);
+    const rpmGrad=ctx.createLinearGradient(barX,0,barX+barW,0);
+    rpmGrad.addColorStop(0,'#00cc44');rpmGrad.addColorStop(0.65,'#ffcc00');rpmGrad.addColorStop(1,'#ff2200');
+    ctx.fillStyle=rpmGrad;ctx.fillRect(barX,barY,barW*rpm,barH);
     // Drift charge bar
     if(this.player.driftCharge>0){
-      const bw=80,bh=8,bx=W/2-bw/2,by=72;
-      ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(bx,by,bw,bh);
+      const bw=80,bh=6,bx=W/2-bw/2,by=72;
+      ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(bx,by,bw,bh);
       const frac=this.player.driftCharge/2.5;
       const gc=ctx.createLinearGradient(bx,0,bx+bw,0);gc.addColorStop(0,'#ff8800');gc.addColorStop(1,'#ffff00');
       ctx.fillStyle=gc;ctx.fillRect(bx,by,bw*frac,bh);
@@ -1746,34 +1778,85 @@ class Game {
   }
 
   _drawSkyPerspective(ctx,W,H,horizonY,camX,camY){
-    const track=this.currentTrack,n=this.dayTime;
-    const skies={
-      desert:['#e8c060','#d4902a'],
-      forest:['#3a78c4','#6aaae0'],
-      night: [`hsl(220,${Math.round(40-n*20)}%,${Math.round(30-n*22)}%)`,`hsl(230,${Math.round(50-n*30)}%,${Math.round(8-n*4)}%)`],
-      ice:   ['#b0d4f4','#ddeeff']
-    };
-    const [s1,s2]=skies[track.theme]||['#3a78c4','#6aaae0'];
+    const track=this.currentTrack,nd=this.dayTime;
+    ctx.save();
+    // Sky gradient
     const gd=ctx.createLinearGradient(0,0,0,horizonY);
-    gd.addColorStop(0,s1);gd.addColorStop(1,s2);
+    if(track.theme==='desert'){
+      gd.addColorStop(0,'#e07830');gd.addColorStop(0.4,'#e8b050');gd.addColorStop(1,'#f0cc78');
+    }else if(track.theme==='forest'){
+      gd.addColorStop(0,'#1a4a8a');gd.addColorStop(0.55,'#3a78c4');gd.addColorStop(1,'#6ab0e0');
+    }else if(track.theme==='night'){
+      const br=Math.round(18-nd*14);
+      gd.addColorStop(0,`hsl(225,45%,${br}%)`);gd.addColorStop(1,`hsl(230,55%,${Math.max(3,br-8)}%)`);
+    }else{
+      gd.addColorStop(0,'#88b8e0');gd.addColorStop(0.5,'#b0d4f4');gd.addColorStop(1,'#ddeeff');
+    }
     ctx.fillStyle=gd;ctx.fillRect(0,0,W,horizonY);
 
-    if(track.theme==='night'&&n>0.2){
-      // City skyline silhouette on horizon
-      ctx.fillStyle=`rgba(5,6,18,0.92)`;
-      let bx=0,seed=137;
-      while(bx<W+100){seed=(seed*1664525+1013904223)&0xffffffff;const bw=20+(seed%45),bh=18+(seed%55);ctx.fillRect(bx,horizonY-bh,bw,bh);bx+=bw+3;}
-      // Neon dots on buildings
-      ctx.fillStyle=`rgba(255,80,200,${n*0.7})`;
-      for(let x=40;x<W;x+=80){ctx.beginPath();ctx.arc(x,horizonY-20-(x*7%35),2,0,Math.PI*2);ctx.fill();}
-    }
-    if(track.theme==='ice'){
+    // Sun disc (desert & forest)
+    if(track.theme==='desert'){
+      const sx=W*0.72,sy=horizonY*0.28;
+      const sg=ctx.createRadialGradient(sx,sy,0,sx,sy,horizonY*0.22);
+      sg.addColorStop(0,'rgba(255,240,160,1)');sg.addColorStop(0.18,'rgba(255,200,80,0.9)');
+      sg.addColorStop(0.45,'rgba(255,140,30,0.4)');sg.addColorStop(1,'rgba(255,100,0,0)');
+      ctx.fillStyle=sg;ctx.fillRect(0,0,W,horizonY);
+      // Hard sun disc
+      ctx.fillStyle='rgba(255,248,200,0.95)';ctx.beginPath();ctx.arc(sx,sy,horizonY*0.06,0,Math.PI*2);ctx.fill();
+    }else if(track.theme==='forest'){
+      const sx=W*0.62,sy=horizonY*0.22;
+      const sg=ctx.createRadialGradient(sx,sy,0,sx,sy,horizonY*0.28);
+      sg.addColorStop(0,'rgba(255,255,220,0.9)');sg.addColorStop(0.25,'rgba(200,230,255,0.35)');sg.addColorStop(1,'rgba(100,180,255,0)');
+      ctx.fillStyle=sg;ctx.fillRect(0,0,W,horizonY);
+      ctx.fillStyle='rgba(255,255,240,0.92)';ctx.beginPath();ctx.arc(sx,sy,horizonY*0.044,0,Math.PI*2);ctx.fill();
+      // Subtle clouds
+      ctx.fillStyle='rgba(255,255,255,0.14)';
+      [[W*0.15,horizonY*0.3,80,22],[W*0.38,horizonY*0.18,110,28],[W*0.8,horizonY*0.28,70,18]].forEach(([cx,cy,rw,rh])=>{
+        ctx.beginPath();ctx.ellipse(cx,cy,rw,rh,0,0,Math.PI*2);ctx.fill();
+      });
+    }else if(track.theme==='night'){
+      // Moon
+      const mx=W*0.78,my=horizonY*0.25;
+      const mg=ctx.createRadialGradient(mx,my,0,mx,my,horizonY*0.15);
+      mg.addColorStop(0,'rgba(220,230,255,0.6)');mg.addColorStop(1,'rgba(100,120,200,0)');
+      ctx.fillStyle=mg;ctx.fillRect(0,0,W,horizonY);
+      ctx.fillStyle='rgba(230,238,255,0.88)';ctx.beginPath();ctx.arc(mx,my,horizonY*0.035,0,Math.PI*2);ctx.fill();
+      // Stars
+      for(let s=0;s<60;s++){
+        const sx=(Math.sin(s*137.5)*0.5+0.5)*W,sy=(Math.sin(s*97.3)*0.5+0.5)*horizonY*0.85;
+        const sa=0.3+((s*73)%10)/20;
+        ctx.fillStyle=`rgba(200,210,255,${sa})`;ctx.beginPath();ctx.arc(sx,sy,0.8+((s*41)%3)*0.4,0,Math.PI*2);ctx.fill();
+      }
+      // City skyline silhouette
+      if(nd>0.1){
+        ctx.fillStyle=`rgba(5,6,20,${Math.min(0.95,nd+0.2)})`;
+        let bx=0,seed=137;
+        while(bx<W+100){seed=(seed*1664525+1013904223)&0xffffffff;const bw=18+(seed%40),bh=16+(seed%52);ctx.fillRect(bx,horizonY-bh,bw,bh);bx+=bw+3;}
+        // Neon building lights — use sin for seeded deterministic twinkle (no Math.random each frame)
+        const nt=Date.now()*0.0008;
+        for(let x=30;x<W;x+=55){
+          const fl=0.3+0.3*Math.sin(nt+x*0.07);
+          ctx.fillStyle=`rgba(255,80,220,${fl*nd})`;ctx.beginPath();ctx.arc(x,horizonY-22-(x*7%34),1.5,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle=`rgba(80,180,255,${fl*0.8*nd})`;ctx.beginPath();ctx.arc(x+27,horizonY-14-(x*11%28),1.2,0,Math.PI*2);ctx.fill();
+        }
+      }
+    }else if(track.theme==='ice'){
+      // Aurora-like tint at top
+      const ag=ctx.createLinearGradient(0,0,0,horizonY*0.55);
+      ag.addColorStop(0,'rgba(80,200,180,0.18)');ag.addColorStop(1,'rgba(80,200,180,0)');
+      ctx.fillStyle=ag;ctx.fillRect(0,0,W,horizonY*0.55);
       // Mountain silhouettes
-      ctx.fillStyle='rgba(180,210,240,0.6)';
+      ctx.fillStyle='rgba(170,200,230,0.7)';
       ctx.beginPath();ctx.moveTo(0,horizonY);
-      for(let x=0;x<=W;x+=60){ctx.lineTo(x,horizonY-(20+Math.abs(Math.sin(x*0.03+camX*0.001))*55));}
+      for(let x=0;x<=W;x+=55){ctx.lineTo(x,horizonY-(18+Math.abs(Math.sin(x*0.028+camX*0.0008))*58));}
+      ctx.lineTo(W,horizonY);ctx.closePath();ctx.fill();
+      // Snow caps
+      ctx.fillStyle='rgba(240,248,255,0.6)';
+      ctx.beginPath();ctx.moveTo(0,horizonY);
+      for(let x=0;x<=W;x+=55){const mh=horizonY-(18+Math.abs(Math.sin(x*0.028+camX*0.0008))*58);ctx.lineTo(x,mh+18);}
       ctx.lineTo(W,horizonY);ctx.closePath();ctx.fill();
     }
+    ctx.restore();
   }
 
   _drawTrackPerspective(ctx,W,H,proj,horizonY){
@@ -1823,12 +1906,21 @@ class Game {
       // Road surface (base)
       ctx.fillStyle=roadColor;
       ctx.beginPath();ctx.moveTo(cx(rl),cy(rl));ctx.lineTo(cx(rr),cy(rr));ctx.lineTo(cx(nr),cy(nr));ctx.lineTo(cx(nl),cy(nl));ctx.closePath();ctx.fill();
-      // Subtle rubber/dirt strip along racing line (centre tinted darker)
+      // Asphalt grain — alternating brightness strips for road texture depth
+      if(rl.scale>0.08&&Math.floor(i/2)%3===0){
+        const grainA=(Math.sin(i*3.7)*0.5+0.5)*0.07;
+        ctx.fillStyle=`rgba(255,255,255,${grainA})`;
+        ctx.beginPath();ctx.moveTo(cx(rl),cy(rl));ctx.lineTo(cx(rr),cy(rr));ctx.lineTo(cx(nr),cy(nr));ctx.lineTo(cx(nl),cy(nl));ctx.closePath();ctx.fill();
+      }
+      // Rubber/tyre-wear strip along racing line (darker band in centre)
       if(rl.scale>0.12){
         const rc=proj(pt.x,pt.y),nrc=proj(npt.x,npt.y);
-        const rw=Math.max(1.5,(hw*0.28)*rl.scale);
+        const rw=Math.max(1.5,(hw*0.30)*rl.scale);
         if(rc&&nrc&&rc.sy>horizonY){
-          ctx.strokeStyle='rgba(0,0,0,0.18)';ctx.lineWidth=rw*2;
+          ctx.strokeStyle='rgba(0,0,0,0.22)';ctx.lineWidth=rw*2;
+          ctx.beginPath();ctx.moveTo(rc.sx,Math.max(rc.sy,horizonY));ctx.lineTo(nrc.sx,Math.max(nrc.sy,horizonY));ctx.stroke();
+          // Tyre-wear sheen reflection
+          ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=rw*0.7;
           ctx.beginPath();ctx.moveTo(rc.sx,Math.max(rc.sy,horizonY));ctx.lineTo(nrc.sx,Math.max(nrc.sy,horizonY));ctx.stroke();
         }
       }
@@ -1954,8 +2046,8 @@ class Game {
       if(!p||p.sy<horizonY-10)return;
       const sc=p.scale;
       // Car width / height in screen pixels (rear view proportions)
-      const cW=Math.max(5,kart.height*sc*3.2); // screen width = kart body width
-      const cH=Math.max(3,cW*0.48);            // screen height = body height
+      const cW=Math.max(5,kart.height*sc*1.4); // screen width = kart body width
+      const cH=Math.max(3,cW*0.52);            // screen height = body height
       const cx=p.sx, cy=p.sy;
       const bc=kart.bodyColor||'#cc0000';
       const ac=kart.accentColor||kart.color||'#ffcc00';
@@ -2234,7 +2326,7 @@ class Game {
     const hw=this.currentTrack.trackWidth/2-6;
     const allKarts=[this.player,...this.aiKarts];
     allKarts.forEach(kart=>{
-      const near=nearestOnSpline(this.spline,kart);
+      const near=nearestOnSpline(this.spline,kart,kart._splineHint||0);
       if(near.d<hw)return;
       const sp=this.spline[near.idx];
       const dx=kart.x-sp.x,dy=kart.y-sp.y;
