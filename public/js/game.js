@@ -56,83 +56,140 @@ class ParticleSystem {
 // ═══════════════════════════════════════════════════════════
 const TRACKS = [
   {
-    id:0, name:'Sahara Circuit', description:'Fast & flowing desert track',
-    theme:'desert', bgColor:'#c8a050', trackColor:'#484848',
-    laps:3, trackWidth:150, traction:1.0,
-    boostPadTs:[0.12,0.46,0.78], powerUpTs:[0.20,0.40,0.64,0.84],
-    // Start/finish at MIDDLE of straight — 500px before + 500px after before first corner
+    // Long DRS straight into sweepers → chicane → back straight → tight hairpin
+    id:0, name:'Sahara Circuit', description:'Fast sweepers, chicane & a punishing hairpin',
+    theme:'desert', bgColor:'#b89040', trackColor:'#282422',
+    laps:3, trackWidth:155, traction:1.0,
+    boostPadTs:[0.08,0.45,0.75], powerUpTs:[0.18,0.36,0.56,0.76],
     waypoints:[
-      {x:700,y:2300},  // 0: START/FINISH (middle of straight)
-      {x:960,y:2300},  // 1: straight continues
-      {x:1240,y:2300}, // 2: end of straight
-      {x:1560,y:2270}, // 3: first corner
-      {x:1880,y:2120},{x:2230,y:1880},{x:2530,y:1580},{x:2710,y:1280},
-      {x:2730,y:980},{x:2600,y:760},{x:2320,y:660},{x:1990,y:680},
-      {x:1720,y:800},{x:1500,y:700},{x:1300,y:820},{x:1100,y:700},
-      {x:880,y:840},{x:620,y:1090},{x:430,y:1430},
-      {x:340,y:1840},{x:280,y:2160}, // approaching straight
-      {x:265,y:2300},{x:490,y:2300}  // on straight before start line
+      {x:820,y:2450},  // 0: START/FINISH
+      {x:1180,y:2450}, // straight
+      {x:1620,y:2450}, // end of main straight — hard braking zone
+      {x:2020,y:2380}, // sweeping right entry
+      {x:2380,y:2160}, // fast right
+      {x:2620,y:1860}, // sweeper continues
+      {x:2700,y:1520}, // long fast right
+      {x:2640,y:1200}, // exits sweeper
+      {x:2420,y:980},  // back section start
+      {x:2100,y:820},  // fast left-ish
+      {x:1780,y:740},  // back straight
+      {x:1440,y:700},  // CHICANE entry
+      {x:1220,y:820},  // chicane left
+      {x:1080,y:700},  // chicane right
+      {x:860,y:820},   // chicane exit
+      {x:600,y:950},   // short approach
+      {x:380,y:1080},  // TIGHT HAIRPIN entry — heavy braking
+      {x:240,y:1280},  // hairpin apex
+      {x:270,y:1560},  // hairpin exit
+      {x:360,y:1900},  // long sweep back
+      {x:420,y:2200},  // approaching main straight
+      {x:520,y:2380},  // approach
+      {x:640,y:2450},  // on straight before start
     ],
-    grid:[{x:640,y:2262,angle:0},{x:580,y:2338,angle:0},{x:520,y:2262,angle:0},{x:460,y:2338,angle:0}]
+    grid:[{x:755,y:2412,angle:0},{x:695,y:2488,angle:0},{x:635,y:2412,angle:0},{x:575,y:2488,angle:0}]
   },
   {
-    id:1, name:'Forest Rally', description:'Technical forest circuit with tight hairpins',
-    theme:'forest', bgColor:'#1e4a18', trackColor:'#555',
-    laps:3, trackWidth:125, traction:1.0,
-    boostPadTs:[0.12,0.46,0.76], powerUpTs:[0.22,0.42,0.66,0.86],
+    // Three hairpins, a double chicane, narrow track — pure driving skill
+    id:1, name:'Forest Rally', description:'Narrow, three hairpins & a killer chicane',
+    theme:'forest', bgColor:'#1a4015', trackColor:'#1c1c1c',
+    laps:3, trackWidth:120, traction:0.92,
+    boostPadTs:[0.09,0.40,0.72], powerUpTs:[0.18,0.38,0.60,0.82],
     waypoints:[
-      {x:780,y:2450},  // 0: START/FINISH (middle of straight)
-      {x:1060,y:2450}, // 1: straight after
-      {x:1360,y:2450}, // 2: end of straight
-      {x:1720,y:2400}, // 3: first corner
-      {x:1980,y:2200},{x:2240,y:1950},{x:2440,y:1680},{x:2490,y:1380},
-      {x:2390,y:1100},{x:2140,y:900},{x:1840,y:820},
-      {x:1540,y:860},{x:1340,y:975},{x:1140,y:870},
-      {x:940,y:985},{x:780,y:870},{x:630,y:988},
-      {x:510,y:1350},{x:440,y:1700},{x:400,y:2060},
-      {x:375,y:2350}, // approaching straight
-      {x:385,y:2450},{x:570,y:2450} // on straight before start
+      {x:760,y:2500},  // 0: START/FINISH
+      {x:1120,y:2500}, // straight
+      {x:1500,y:2500}, // end of straight
+      {x:1900,y:2440}, // entry to hairpin 1
+      {x:2180,y:2220}, // HAIRPIN 1 — right
+      {x:2260,y:1960},
+      {x:2180,y:1720}, // hairpin 1 exit
+      {x:1940,y:1580}, // fast left
+      {x:1660,y:1520}, // short straight
+      {x:1380,y:1440}, // HAIRPIN 2 — left
+      {x:1180,y:1300},
+      {x:1060,y:1120},
+      {x:1140,y:940},  // hairpin 2 exit
+      {x:1320,y:820},  // connecting section
+      {x:1100,y:700},  // DOUBLE CHICANE left
+      {x:900,y:820},   // chicane right
+      {x:700,y:700},   // chicane left
+      {x:520,y:820},   // chicane exit
+      {x:360,y:1000},  // HAIRPIN 3 — sharp left
+      {x:260,y:1220},
+      {x:280,y:1480},  // hairpin 3 exit
+      {x:360,y:1780},  // long return
+      {x:420,y:2100},
+      {x:460,y:2360},  // approaching start
+      {x:560,y:2500},  // on straight before start
     ],
-    grid:[{x:718,y:2412,angle:0},{x:658,y:2488,angle:0},{x:598,y:2412,angle:0},{x:538,y:2488,angle:0}]
+    grid:[{x:700,y:2462,angle:0},{x:640,y:2538,angle:0},{x:580,y:2462,angle:0},{x:520,y:2538,angle:0}]
   },
   {
-    id:2, name:'Night City', description:'Urban night circuit with neon lights',
-    theme:'night', bgColor:'#050812', trackColor:'#2a2a3e',
-    laps:3, trackWidth:140, traction:1.0,
-    boostPadTs:[0.10,0.40,0.72], powerUpTs:[0.20,0.40,0.62,0.82],
+    // Singapore-style street circuit — 90° turns, long tunnel straight, bus-stop chicane
+    id:2, name:'Night City', description:'Street circuit — walls, neon & no room for error',
+    theme:'night', bgColor:'#04060f', trackColor:'#161618',
+    laps:3, trackWidth:130, traction:1.0,
+    boostPadTs:[0.08,0.38,0.68], powerUpTs:[0.16,0.36,0.58,0.80],
     waypoints:[
-      {x:1050,y:2600}, // 0: START/FINISH (middle of long straight)
-      {x:1400,y:2600}, // 1: straight after
-      {x:1800,y:2600}, // 2: end of long straight
-      {x:2260,y:2550}, // 3: first corner
-      {x:2610,y:2340},{x:2850,y:2040},{x:2890,y:1700},
-      {x:2790,y:1400},{x:2490,y:1140},{x:2140,y:1040},{x:1780,y:1090},
-      {x:1520,y:1240},{x:1300,y:1085},{x:1100,y:1250},
-      {x:860,y:1540},{x:660,y:1890},{x:480,y:2240},
-      {x:368,y:2460}, // approaching straight
-      {x:360,y:2600},{x:720,y:2600} // on straight before start
+      {x:900,y:2620},  // 0: START/FINISH
+      {x:1300,y:2620}, // straight
+      {x:1780,y:2620}, // end of main straight
+      {x:2180,y:2560}, // braking — right turn
+      {x:2520,y:2380}, // 90° right corner
+      {x:2680,y:2080}, // short straight up
+      {x:2700,y:1780}, // gentle right
+      {x:2620,y:1500}, // HAIRPIN — hard left
+      {x:2420,y:1340},
+      {x:2180,y:1280}, // hairpin exit
+      {x:1880,y:1340}, // sweeper right
+      {x:1600,y:1260}, // BUS-STOP CHICANE
+      {x:1400,y:1120}, // chicane left
+      {x:1240,y:1000}, // chicane right
+      {x:1060,y:900},  // chicane exit
+      {x:820,y:780},   // fast left approach
+      {x:560,y:700},   // SLOW HAIRPIN left
+      {x:360,y:860},
+      {x:280,y:1100},  // hairpin apex
+      {x:320,y:1380},  // hairpin exit
+      {x:400,y:1700},  // long return straight
+      {x:440,y:2040},
+      {x:460,y:2340},  // approaching start
+      {x:580,y:2500},  // on straight
+      {x:740,y:2620},  // on straight before start
     ],
-    grid:[{x:978,y:2562,angle:0},{x:908,y:2638,angle:0},{x:838,y:2562,angle:0},{x:768,y:2638,angle:0}]
+    grid:[{x:840,y:2582,angle:0},{x:780,y:2658,angle:0},{x:720,y:2582,angle:0},{x:660,y:2658,angle:0}]
   },
   {
-    id:3, name:'Ice Valley', description:'Slippery mountain circuit',
-    theme:'ice', bgColor:'#d0e8f5', trackColor:'#c0d8ee',
-    laps:3, trackWidth:145, traction:0.38,
-    boostPadTs:[0.11,0.42,0.72], powerUpTs:[0.20,0.42,0.64,0.84],
+    // Huge sweepers that tighten on ice — punishing but thrilling
+    id:3, name:'Ice Valley', description:'Monster sweepers on ice — brake early or crash',
+    theme:'ice', bgColor:'#c8e0f0', trackColor:'#586070',
+    laps:3, trackWidth:150, traction:0.35,
+    boostPadTs:[0.10,0.40,0.70], powerUpTs:[0.18,0.40,0.62,0.84],
     waypoints:[
-      {x:820,y:2700},  // 0: START/FINISH (middle of straight)
-      {x:1100,y:2700}, // 1: straight after
-      {x:1460,y:2700}, // 2: end of straight
-      {x:1870,y:2655}, // 3: first corner
-      {x:2150,y:2510},{x:2550,y:2270},{x:2870,y:1960},{x:3100,y:1630},
-      {x:3150,y:1280},{x:3030,y:980},{x:2750,y:780},{x:2400,y:700},
-      {x:2030,y:730},{x:1700,y:860},
-      {x:1470,y:755},{x:1250,y:870},{x:1050,y:755},
-      {x:820,y:1040},{x:620,y:1370},{x:465,y:1740},
-      {x:385,y:2185}, // approaching straight
-      {x:375,y:2550},{x:385,y:2700},{x:612,y:2700} // on straight before start
+      {x:820,y:2720},  // 0: START/FINISH
+      {x:1240,y:2720}, // long straight
+      {x:1760,y:2720}, // end of straight
+      {x:2220,y:2660}, // wide entry — sweeper 1 (seems gentle, tightens)
+      {x:2620,y:2440},
+      {x:2880,y:2140},
+      {x:3020,y:1800}, // starts tightening here
+      {x:3000,y:1460}, // TIGHT RIGHT — catch this late and you're in the wall
+      {x:2820,y:1180},
+      {x:2540,y:980},  // HAIRPIN on ice
+      {x:2260,y:880},
+      {x:1980,y:940},  // hairpin exit
+      {x:1700,y:1060}, // back section
+      {x:1440,y:980},  // ICE CHICANE
+      {x:1220,y:1100},
+      {x:1020,y:980},  // chicane exit
+      {x:780,y:1080},  // SLOW HAIRPIN — ice makes this lethal
+      {x:580,y:1260},
+      {x:540,y:1560},  // hairpin apex
+      {x:600,y:1880},  // long exit
+      {x:620,y:2220},  // approaching
+      {x:600,y:2520},  // on approach
+      {x:620,y:2720},  // on straight before start
     ],
-    grid:[{x:752,y:2662,angle:0},{x:692,y:2738,angle:0},{x:632,y:2662,angle:0},{x:572,y:2738,angle:0}]
+    grid:[{x:755,y:2682,angle:0},{x:695,y:2758,angle:0},{x:635,y:2682,angle:0},{x:575,y:2758,angle:0}]
   }
 ];
 
@@ -140,9 +197,9 @@ const TRACKS = [
 //  KART DATA
 // ═══════════════════════════════════════════════════════════
 const KARTS=[
-  {id:0,name:'Speed Demon',description:'Blazing fast, hard to control',maxSpeed:220,acceleration:155,handling:1.25,braking:280,friction:72,color:'#ff3333',bodyColor:'#bb0000',wheelColor:'#111',width:28,height:18},
-  {id:1,name:'Road King',description:'Balanced speed and control',maxSpeed:185,acceleration:130,handling:1.65,braking:255,friction:65,color:'#4488ff',bodyColor:'#1144cc',wheelColor:'#111',width:26,height:17},
-  {id:2,name:'Iron Grip',description:'Slow but incredibly precise',maxSpeed:155,acceleration:105,handling:2.1,braking:310,friction:55,color:'#33dd33',bodyColor:'#1a881a',wheelColor:'#111',width:24,height:16}
+  {id:0,name:'Speed Demon',description:'Blazing fast, hard to control',maxSpeed:255,acceleration:185,handling:1.3,braking:300,friction:80,color:'#ff3333',bodyColor:'#bb0000',wheelColor:'#111',width:28,height:18},
+  {id:1,name:'Road King',description:'Balanced speed and control',maxSpeed:215,acceleration:155,handling:1.7,braking:265,friction:68,color:'#4488ff',bodyColor:'#1144cc',wheelColor:'#111',width:26,height:17},
+  {id:2,name:'Iron Grip',description:'Slow but incredibly precise',maxSpeed:175,acceleration:120,handling:2.2,braking:340,friction:58,color:'#33dd33',bodyColor:'#1a881a',wheelColor:'#111',width:24,height:16}
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -237,33 +294,44 @@ class Kart {
 
   update(input,spline,trackWidth,dt,traction=1.0){
     const near=nearestOnSpline(spline,this);
-    this.offTrack=near.d>trackWidth/2+14;
-    let cap=this.maxSpeed*(this.offTrack?0.38:1.0);
-    if(this.boostTimer>0){this.boostTimer-=dt;cap=this.maxSpeed*1.22;}
-    if(this.spinTimer>0){this.spinTimer-=dt;this.angle+=5*dt;this.speed*=0.93;cap=this.maxSpeed*0.3;}
+    this.offTrack=near.d>trackWidth/2+10;
+    // Off-track: speed tapers off smoothly, not a hard cap
+    const offPenalty=this.offTrack?Math.max(0.42,1-(near.d-(trackWidth/2+10))*0.004):1.0;
+    let cap=this.maxSpeed*offPenalty;
+    if(this.boostTimer>0){this.boostTimer-=dt;cap=this.maxSpeed*1.28;}
+    if(this.spinTimer>0){this.spinTimer-=dt;this.angle+=6*dt;this.speed=lerp(this.speed,0,4*dt);cap=this.maxSpeed*0.25;}
 
     if(input.up){this.speed=Math.min(this.speed+this.acceleration*dt,cap);}
-    else if(input.down){if(this.speed>0)this.speed=Math.max(this.speed-this.braking*dt,0);else this.speed=Math.max(this.speed-this.acceleration*0.45*dt,-this.maxSpeed*0.3);}
+    else if(input.down){if(this.speed>0)this.speed=Math.max(this.speed-this.braking*dt,0);else this.speed=Math.max(this.speed-this.acceleration*0.5*dt,-this.maxSpeed*0.32);}
     else{if(this.speed>0)this.speed=Math.max(this.speed-this.friction*dt,0);else if(this.speed<0)this.speed=Math.min(this.speed+this.friction*dt,0);}
-    if(this.offTrack&&this.speed>cap)this.speed=lerp(this.speed,cap,Math.min(4*dt,1));
+    if(this.offTrack&&this.speed>cap)this.speed=lerp(this.speed,cap,Math.min(3.5*dt,1));
 
-    const sf=clamp(Math.abs(this.speed)/(this.maxSpeed*0.25),0,1);
+    // Non-linear steering: responsive mid-speed, reduces at very high speed
+    const speedRatio=Math.abs(this.speed)/this.maxSpeed;
+    const sf=clamp(speedRatio/0.22,0,1)*clamp(1.0-speedRatio*0.35,0.55,1.0);
     const dir=this.speed>=0?1:-1;
     if(input.left) this.angle-=this.handling*sf*dir*dt;
     if(input.right)this.angle+=this.handling*sf*dir*dt;
 
-    // Drift physics
-    const wantDrift=input.drift&&Math.abs(this.speed)>this.maxSpeed*0.28&&(input.left||input.right);
+    // Drift — more slide, more Mario Kart feel
+    const wantDrift=input.drift&&Math.abs(this.speed)>this.maxSpeed*0.25&&(input.left||input.right);
     const targetVX=Math.cos(this.angle)*this.speed;
     const targetVY=Math.sin(this.angle)*this.speed;
-    const blendRate=wantDrift?2.5:12.0;
-    const effectiveBlend=blendRate*traction*(wantDrift?1:1);
-    this.vx=lerp(this.vx,targetVX,Math.min(effectiveBlend*dt,1));
-    this.vy=lerp(this.vy,targetVY,Math.min(effectiveBlend*dt,1));
+    // Lower blendRate = more slide. Traction (ice) multiplies the grip.
+    const blendRate=wantDrift?1.6:11.0;
+    this.vx=lerp(this.vx,targetVX,Math.min(blendRate*traction*dt,1));
+    this.vy=lerp(this.vy,targetVY,Math.min(blendRate*traction*dt,1));
 
-    if(wantDrift){this.driftCharge=Math.min(this.driftCharge+dt,2.5);this.isDrifting=true;}
-    else{
-      if(this.isDrifting&&this.driftCharge>0.4){this.boostTimer=Math.min(this.driftCharge*0.45,1.2);this.speed=Math.min(this.speed*1.2,this.maxSpeed*1.15);}
+    if(wantDrift){
+      this.driftCharge=Math.min(this.driftCharge+dt,2.8);
+      this.isDrifting=true;
+    } else {
+      if(this.isDrifting&&this.driftCharge>0.35){
+        // Reward good drifts — longer boost, speed kick
+        const blen=Math.min(this.driftCharge*0.55,1.5);
+        this.boostTimer=blen;
+        this.speed=Math.min(this.speed*1.25,this.maxSpeed*1.2);
+      }
       this.driftCharge=0;this.isDrifting=false;
     }
 
@@ -311,12 +379,19 @@ class AIKart extends Kart {
     const origMax=this.maxSpeed;
     this.maxSpeed*=this._rubberBand;
 
-    const ahead=Math.round(28*this.aiVariance);
+    // Look further ahead at high speed, closer in tight corners for better line
+    const speedFrac=Math.abs(this.speed)/(this.maxSpeed||1);
+    const ahead=Math.round((20+speedFrac*30)*this.aiVariance);
     const target=this._spline[(near.idx+ahead)%n];
     const diff=normalizeAngle(Math.atan2(target.y-this.y,target.x-this.x)-this.angle);
-    const tight=Math.abs(diff)>0.45;
-    this._aiInput.up=!tight;this._aiInput.down=tight&&this.speed>this.maxSpeed*0.55;
+    // Also peek further ahead to predict upcoming tight turns
+    const far=this._spline[(near.idx+ahead*2)%n];
+    const farDiff=normalizeAngle(Math.atan2(far.y-this.y,far.x-this.x)-this.angle);
+    const tight=Math.abs(diff)>0.38||Math.abs(farDiff)>0.55;
+    this._aiInput.up=!tight;this._aiInput.down=tight&&this.speed>this.maxSpeed*0.5;
     this._aiInput.left=diff<-0.04;this._aiInput.right=diff>0.04;
+    // Drift on tight fast corners
+    this._aiInput.drift=Math.abs(diff)>0.4&&speedFrac>0.55;
 
     // Lap tracking
     const cp1=this._spline[Math.floor(n*0.33)],cp2=this._spline[Math.floor(n*0.67)];
@@ -1579,25 +1654,25 @@ class Game {
         if(cl2&&nl2&&cl2.sy>horizonY){ctx.strokeStyle=lineColor;ctx.lineWidth=Math.max(1,cl2.scale*2);ctx.beginPath();ctx.moveTo(cl2.sx,Math.max(cl2.sy,horizonY));ctx.lineTo(nl2.sx,Math.max(nl2.sy,horizonY));ctx.stroke();}
       }
 
-      // Armco barriers along outer curb edges
+      // Solid Armco barriers — alternating red/white panels
       if(rl&&nl&&cl&&ncl&&rr&&nr&&cr&&ncr){
-        const BH=20;
-        const barrierCol=track.theme==='ice'
-          ? (Math.floor(i/10)%2?'rgba(200,225,245,0.92)':'rgba(255,255,255,0.7)')
-          : (Math.floor(i/10)%2?'#cc2222':'rgba(240,240,240,0.9)');
-        ctx.fillStyle=barrierCol;
-        // Left barrier
-        ctx.beginPath();
-        ctx.moveTo(cx(cl),cy(cl));ctx.lineTo(cx(ncl),cy(ncl));
-        ctx.lineTo(cx(ncl),Math.max(cy(ncl)-BH*ncl.scale,horizonY));
-        ctx.lineTo(cx(cl),Math.max(cy(cl)-BH*cl.scale,horizonY));
-        ctx.closePath();ctx.fill();
-        // Right barrier
-        ctx.beginPath();
-        ctx.moveTo(cx(cr),cy(cr));ctx.lineTo(cx(ncr),cy(ncr));
-        ctx.lineTo(cx(ncr),Math.max(cy(ncr)-BH*ncr.scale,horizonY));
-        ctx.lineTo(cx(cr),Math.max(cy(cr)-BH*cr.scale,horizonY));
-        ctx.closePath();ctx.fill();
+        const BH=28;
+        const panel=Math.floor(i/8)%2;
+        const barA=track.theme==='ice'?'#b8cce0':'#cc1111';
+        const barB='#f0f0f0';
+        const col=panel?barA:barB;
+        // Base shadow strip
+        ctx.fillStyle='rgba(0,0,0,0.4)';
+        ctx.beginPath();ctx.moveTo(cx(cl),cy(cl));ctx.lineTo(cx(ncl),cy(ncl));ctx.lineTo(cx(ncl),Math.max(cy(ncl)-4,horizonY));ctx.lineTo(cx(cl),Math.max(cy(cl)-4,horizonY));ctx.closePath();ctx.fill();
+        ctx.beginPath();ctx.moveTo(cx(cr),cy(cr));ctx.lineTo(cx(ncr),cy(ncr));ctx.lineTo(cx(ncr),Math.max(cy(ncr)-4,horizonY));ctx.lineTo(cx(cr),Math.max(cy(cr)-4,horizonY));ctx.closePath();ctx.fill();
+        // Main panel
+        ctx.fillStyle=col;
+        ctx.beginPath();ctx.moveTo(cx(cl),cy(cl));ctx.lineTo(cx(ncl),cy(ncl));ctx.lineTo(cx(ncl),Math.max(cy(ncl)-BH*ncl.scale,horizonY));ctx.lineTo(cx(cl),Math.max(cy(cl)-BH*cl.scale,horizonY));ctx.closePath();ctx.fill();
+        ctx.beginPath();ctx.moveTo(cx(cr),cy(cr));ctx.lineTo(cx(ncr),cy(ncr));ctx.lineTo(cx(ncr),Math.max(cy(ncr)-BH*ncr.scale,horizonY));ctx.lineTo(cx(cr),Math.max(cy(cr)-BH*cr.scale,horizonY));ctx.closePath();ctx.fill();
+        // Top highlight line
+        ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(cx(cl),Math.max(cy(cl)-BH*cl.scale,horizonY));ctx.lineTo(cx(ncl),Math.max(cy(ncl)-BH*ncl.scale,horizonY));ctx.stroke();
+        ctx.beginPath();ctx.moveTo(cx(cr),Math.max(cy(cr)-BH*cr.scale,horizonY));ctx.lineTo(cx(ncr),Math.max(cy(ncr)-BH*ncr.scale,horizonY));ctx.stroke();
       }
     }
 
@@ -1610,25 +1685,37 @@ class Game {
   }
 
   _drawObjectsPerspective(ctx,proj,horizonY){
-    // Boost pads
+    // Boost pads — bright arrow panels on the road
     this.boostPads.forEach(pad=>{
       const p=proj(pad.x,pad.y);if(!p||p.sy<horizonY)return;
-      const sz=Math.max(4,22*p.scale);
+      const sz=Math.max(4,24*p.scale);
+      const pulse=0.7+0.3*Math.sin(Date.now()*0.005+pad.x);
       ctx.save();ctx.translate(p.sx,p.sy);
-      ctx.fillStyle='rgba(255,200,0,0.85)';ctx.fillRect(-sz,-sz*0.4,sz*2,sz*0.8);
-      ctx.fillStyle='#fff';ctx.font=`bold ${Math.round(sz*0.7)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('▶▶',0,0);
+      ctx.globalAlpha=pulse;
+      ctx.fillStyle='#ff9900';ctx.fillRect(-sz,-sz*0.45,sz*2,sz*0.9);
+      ctx.fillStyle='#ffee00';ctx.fillRect(-sz*0.85,-sz*0.28,sz*1.7,sz*0.56);
+      ctx.globalAlpha=1;ctx.fillStyle='#fff';
+      ctx.font=`bold ${Math.round(sz*0.75)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('▶▶',0,0);
       ctx.restore();
     });
-    // Power-up pickups
+    // Power-up pickups — spinning item boxes (Mario Kart style)
+    const now=Date.now();
     this.powerUpPickups.forEach(pu=>{
       if(!pu.available)return;
       const p=proj(pu.x,pu.y);if(!p||p.sy<horizonY)return;
-      const sz=Math.max(3,18*p.scale);
-      const c={boost:'#ff8800',shield:'#44aaff',oil:'#882299'}[pu.type]||'#fff';
-      ctx.save();ctx.translate(p.sx,p.sy-sz);
-      ctx.fillStyle=c;ctx.beginPath();ctx.arc(0,0,sz,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#fff';ctx.font=`bold ${Math.round(sz*0.9)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(pu.type==='boost'?'B':pu.type==='shield'?'S':'O',0,0);
+      const sz=Math.max(5,22*p.scale);
+      const spin=(now*0.002+pu.x*0.01)%(Math.PI*2);
+      const squish=0.85+0.15*Math.cos(spin*2);
+      ctx.save();ctx.translate(p.sx,p.sy-sz*1.1);ctx.scale(squish,1);
+      // Glow
+      ctx.shadowColor='rgba(255,220,0,0.8)';ctx.shadowBlur=Math.max(3,sz*0.8);
+      // Box body
+      ctx.fillStyle='#e8c800';ctx.fillRect(-sz,-sz,sz*2,sz*2);
+      ctx.fillStyle='#fff';ctx.fillRect(-sz*0.85,-sz*0.85,sz*1.7,sz*1.7);
+      ctx.fillStyle='#e8c800';ctx.fillRect(-sz*0.65,-sz*0.65,sz*1.3,sz*1.3);
+      // Question mark
+      ctx.shadowBlur=0;ctx.fillStyle='#fff';
+      ctx.font=`bold ${Math.round(sz*1.1)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('?',0,0);
       ctx.restore();
     });
     // Oil slicks
